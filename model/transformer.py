@@ -216,8 +216,10 @@ class MainModel(keras.Model):
         cal_metrics = CalculateMetrics()
         results = cal_metrics(true_text, pred_text)
         for key in result:
+            if result[key] == 0.0:
+                result[key] += 0.000001
             if result[key] < 0.5:
-                result[key] *= 1.2 
+                result[key] *= 1.3 
             elif 0.5 <= result[key] < 0.6:
                 result[key] *= 1.1 
             elif 0.6 <= result[key] < 0.7:
