@@ -17,6 +17,8 @@ class CalculateMetrics(tf.keras.layers.Layer):
     def call(self, true, pred):
         true = [item.decode('utf-8') for item in true.numpy()]
         pred = [item.decode('utf-8') for item in pred.numpy()]
+        true = [text.lower() for text in true]
+        pred = [text.lower() for text in pred]
         BLUE, ROUGE1, ROUGE2, ROUGE3, METEOR = [], [], [], [], []
         for i, j in tqdm(zip(true, pred), desc="Calculate metrics"):
             bleu, rouge1, rouge2, rouge3, meteor = self.calculate_metrics(i , j)
