@@ -107,13 +107,14 @@ class TransformerDecoder(tf.keras.Layer):
         return tf.tile(mask, mult)
 
 class MainModel(keras.Model):
-    def __init__(self, encoder, decoder, vectorization):
+    def __init__(self, encoder, decoder, vectorization, SEQ_LENGTH):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.loss_tracker = keras.metrics.Mean(name="loss")
         self.acc_tracker = keras.metrics.Mean(name="accuracy")
         self.vectorization = vectorization
+        self.SEQ_LENGTH = SEQ_LENGTH
 
     def calculate_loss(self, y_true, y_pred, mask):
         loss = self.loss(y_true, y_pred)
@@ -176,7 +177,7 @@ class MainModel(keras.Model):
     def call(self, prompt):
         vocab = self.vectorization.get_vocabulary()
         index_lookup = dict(zip(range(len(vocab)), vocab))
-        max_decoded_sentence_length = SEQ_LENGTH - 1
+        max_decoded_sentence_length = self.SEQ_LENGTH - 1
 
         text = self.vectorization([prompt])
         mask = tf.math.not_equal(text, 0)
@@ -211,7 +212,7 @@ class MainModel(keras.Model):
         
         vocab = self.vectorization.get_vocabulary()
         index_lookup = dict(zip(range(len(vocab)), vocab))
-        max_decoded_sentence_length = SEQ_LENGTH - 1
+        max_decoded_sentence_length = self.SEQ_LENGTH - 1
 
         pred = np.argmax(out[0, :, :])
         pred_text, true_text = [], []
