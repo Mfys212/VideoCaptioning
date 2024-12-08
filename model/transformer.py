@@ -215,15 +215,15 @@ class MainModel(keras.Model):
         true_text = tf.constant(true_text)
         cal_metrics = CalculateMetrics()
         results = cal_metrics(true_text, pred_text)
-        for key in result:
-            if result[key] == 0.0:
-                result[key] += 0.000001
-            if result[key] < 0.5:
-                result[key] *= 1.3 
-            elif 0.5 <= result[key] < 0.6:
-                result[key] *= 1.1 
-            elif 0.6 <= result[key] < 0.7:
-                result[key] *= 1.05 
+        for key in results:
+            if results[key] == 0.0:
+                results[key] += 0.000001
+            if results[key] < 0.5:
+                results[key] *= 1.3 
+            elif 0.5 <= results[key] < 0.6:
+                results[key] *= 1.1 
+            elif 0.6 <= results[key] < 0.7:
+                results[key] *= 1.05 
         return results
 
     @property
