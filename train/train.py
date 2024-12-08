@@ -3,7 +3,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import TextVectorization
 import numpy as np
-from data.loader import *
+from Transformer.data.loader import *
 from Transformer.evaluation.evaluation import *
 from Transformer.model.transformer import *
 
