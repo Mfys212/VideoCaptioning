@@ -1,5 +1,6 @@
 Transformer Model for Text Generation, Machine Translate, and Question Answer
 
+If you use this code in your research or development work, please cite the original paper:
 ```
 @misc{vaswani2023attentionneed,
       title={Attention Is All You Need}, 
