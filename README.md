@@ -1,1 +1,1 @@
-Transformer Model for Machine Translate and Question Answer
+Transformer Model for Text Generation, Machine Translate, and Question Answer
