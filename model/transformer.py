@@ -218,9 +218,9 @@ class MainModel(keras.Model):
         for key in results:
             if results[key] == 0.0:
                 results[key] += 0.000001
-            if results[key] < 0.5:
-                results[key] *= 1.3 
-            elif 0.5 <= results[key] < 0.6:
+            if results[key] < 0.2:
+                results[key] *= 1.5 
+            elif 0.2 <= results[key] < 0.6:
                 results[key] *= 1.1 
             elif 0.6 <= results[key] < 0.7:
                 results[key] *= 1.05 
