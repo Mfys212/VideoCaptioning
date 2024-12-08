@@ -11,8 +11,8 @@ def TRANSFORMER(train, valid, batch=32, num_head=8, num_l=2, EMBED_DIM=512, SEQ_
     BATCH_SIZE = batch
     GetData = DataLoader(train, valid, VOCAB_SIZE, SEQ_LENGTH, BATCH_SIZE)
     train_dataset, valid_dataset, vectorization = GetData.get_data()
-    encoder = TransformerEncoder(num_heads=num_head, num_l=num_l, EMBED_DIM=EMBED_DIM, vocab=vectorization.get_vocabulary())
-    decoder = TransformerDecoder(num_heads=num_head, num_l=num_l, EMBED_DIM=EMBED_DIM, vocab=vectorization.get_vocabulary())
+    encoder = TransformerEncoder(num_heads=num_head, num_l=num_l, SEQ_LENGTH=SEQ_LENGTH, EMBED_DIM=EMBED_DIM, vocab=vectorization.get_vocabulary())
+    decoder = TransformerDecoder(num_heads=num_head, num_l=num_l, SEQ_LENGTH=SEQ_LENGTH, EMBED_DIM=EMBED_DIM, vocab=vectorization.get_vocabulary())
     model = MainModel(encoder, decoder, vectorization)
 
     def optim(optim=tf.keras.optimizers.Adam):
