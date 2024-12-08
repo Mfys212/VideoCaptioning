@@ -3,6 +3,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.layers import TextVectorization
 import numpy as np
+from tqdm import tqdm 
 from Transformer.evaluation.evaluation import *
 
 class PositionalEncoding(tf.keras.layers.Layer):
@@ -116,6 +117,9 @@ class MainModel(keras.Model):
         self.acc_tracker = keras.metrics.Mean(name="accuracy")
         self.vectorization = vectorization
         self.SEQ_LENGTH = SEQ_LENGTH
+        self.vocab = self.vectorization.get_vocabulary()
+        self.index_lookup = dict(zip(range(len(self.vocab)), self.vocab))
+        self.max_decoded_sentence_length = SEQ_LENGTH - 1
 
     def calculate_loss(self, y_true, y_pred, mask):
         loss = self.loss(y_true, y_pred)
@@ -176,21 +180,17 @@ class MainModel(keras.Model):
         return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
 
     def call(self, prompt):
-        vocab = self.vectorization.get_vocabulary()
-        index_lookup = dict(zip(range(len(vocab)), vocab))
-        max_decoded_sentence_length = self.SEQ_LENGTH - 1
-
         text = self.vectorization([prompt])
         mask = tf.math.not_equal(text, 0)
         encoded_out = self.encoder(text, training=False, mask=mask)
 
         decoded_caption = "<start>"
-        for i in range(max_decoded_sentence_length):
+        for i in range(self.max_decoded_sentence_length):
             tokenized_caption = self.vectorization([decoded_caption])[:, :-1]
             mask = tf.math.not_equal(tokenized_caption, 0)
             predictions = self.decoder(tokenized_caption, encoded_out, mask=mask, training=False)
             sampled_token_index = np.argmax(predictions[0, i, :])
-            sampled_token = index_lookup[sampled_token_index]
+            sampled_token = self.index_lookup[sampled_token_index]
             if sampled_token == "<end>":
                 break
             decoded_caption += " " + sampled_token
@@ -204,37 +204,17 @@ class MainModel(keras.Model):
         return self.call(prompt)
 
     def eval_metrics(self, valid_dataset):
-        batch_inp, batch_out = [], []
-        for inp, out in valid_dataset:
-            batch_inp.append(batch_inp)
-            batch_out.append(batch_out)
-        batch_inp = tf.concat(batch_inp, axis=0)
-        batch_out = tf.concat(batch_out, axis=0)
-        
-        mask = tf.math.not_equal(batch_inp, 0)
-        encoder_out = self.encoder(batch_inp, training=False, mask=mask)
-        mask = tf.math.not_equal(batch_out[:, 1:], 0)
-        out = self.decoder(batch_out[:, :-1], encoder_out, mask=mask, training=False)
-        batch_loss, batch_acc = self.compute_loss_acc(out, batch_out[:, 1:], mask=mask)
-        
-        vocab = self.vectorization.get_vocabulary()
-        index_lookup = dict(zip(range(len(vocab)), vocab))
-        max_decoded_sentence_length = self.SEQ_LENGTH - 1
+        col = valid_dataset.columns
+        true_text = valid_dataset[col[1]].str.replace(r'\b(<start>|<end>)\b', '', regex=True).str.strip()
+        pred_text = []
 
-        pred = np.argmax(out[0, :, :])
-        pred_text, true_text = [], []
-        for i, j in zip(pred, batch_out[:, 1:]):
-            if index_lookup[i] == "<end>":
-                break
-            elif index_lookup[i] == "[UNK]":
-                continue
-            pred_text.append(index_lookup[i])
-            true_text.append(index_lookup[j])
+        for i in tqdm(valid_dataset[col[0]], desc="Processing predictions"):
+            pred_text.append(self.predict(i))
 
+        pred_text = tf.constant(pred_text)
+        true_text = tf.constant(true_text)
         cal_metrics = CalculateMetrics()
         results = cal_metrics(true_text, pred_text)
-        results["Loss"] = batch_loss
-        results["Accuracy"] = batch_acc
         return results
 
     @property
