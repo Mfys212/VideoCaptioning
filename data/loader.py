@@ -1,5 +1,9 @@
 import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
 from tensorflow.keras.layers import TextVectorization
+import numpy as np
 
 class DataLoader():
     def __init__(self, train, valid, VOCAB_SIZE, SEQ_LENGTH, BATCH_SIZE):
