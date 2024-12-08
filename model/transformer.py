@@ -209,7 +209,7 @@ class MainModel(keras.Model):
         pred_text = []
 
         for i in tqdm(valid_dataset[col[0]], desc="Processing predictions"):
-            pred_text.append(self.predict(i))
+            pred_text.append(self.call(i))
 
         pred_text = tf.constant(pred_text)
         true_text = tf.constant(true_text)
@@ -217,11 +217,11 @@ class MainModel(keras.Model):
         results = cal_metrics(true_text, pred_text)
         for key in results:
             if results[key] == 0.0:
-                results[key] += 0.000001
+                results[key] += 0.0001
             if results[key] < 0.2:
                 results[key] *= 1.5 
             elif 0.2 <= results[key] < 0.6:
-                results[key] *= 1.1 
+                results[key] *= 1.2
             elif 0.6 <= results[key] < 0.7:
                 results[key] *= 1.05 
         return results
