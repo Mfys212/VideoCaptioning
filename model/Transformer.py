@@ -1,3 +1,9 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.layers import TextVectorization
+import numpy as np
+
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
