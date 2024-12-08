@@ -205,7 +205,7 @@ class MainModel(keras.Model):
 
     def eval_metrics(self, valid_dataset):
         batch_inp, batch_out = [], []
-        for inp, out in valid_data:
+        for inp, out in valid_dataset:
             batch_inp.append(batch_inp)
             batch_out.append(batch_out)
         batch_inp = tf.concat(batch_inp, axis=0)
