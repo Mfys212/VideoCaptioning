@@ -1,4 +1,4 @@
-Transformer Model for Text Generation, Machine Translate, and Question Answer "<a href=\"https://colab.research.google.com/github/Mfys212/Transformer/blob/main/Tutorial.ipynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+Transformer Model for Text Generation, Machine Translate, and Question Answer [![Alt Text]([URL_GAMBAR](https://colab.research.google.com/assets/colab-badge.svg))](https://colab.research.google.com/github/Mfys212/Transformer/blob/main/Tutorial.ipynb)
 
 If you use this code in your research or development work, please cite the original paper:
 ```
