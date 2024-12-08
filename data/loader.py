@@ -1,3 +1,5 @@
+import pandas as pd
+
 class DataLoader():
     def __init__(self, train, valid, VOCAB_SIZE, SEQ_LENGTH, BATCH_SIZE):
         self.col = train.columns
