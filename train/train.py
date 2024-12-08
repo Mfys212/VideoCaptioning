@@ -4,8 +4,8 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers import TextVectorization
 import numpy as np
 from data.loader import *
-from evaluation.evaluation import *
-from model.Transformer import *
+from Transformer.evaluation.evaluation import *
+from Transformer.model.transformer import *
 
 def TRANSFORMER(train, valid, batch=32, num_head=8, num_l=2, EMBED_DIM=512, SEQ_LENGTH=20, VOCAB_SIZE=10000):
     BATCH_SIZE = batch
