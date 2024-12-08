@@ -6,6 +6,7 @@ import numpy as np
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from nltk.translate.meteor_score import meteor_score
 from rouge_score import rouge_scorer
+from tqdm import tqdm 
 import nltk
 nltk.download('wordnet')
 
@@ -14,8 +15,10 @@ class CalculateMetrics(tf.keras.layers.Layer):
         super().__init__(**kwargs)
     
     def call(self, true, pred):
+        true = [item.decode('utf-8') for item in true.numpy()]
+        pred = [item.decode('utf-8') for item in pred.numpy()]
         BLUE, ROUGE1, ROUGE2, ROUGE3, METEOR = [], [], [], [], []
-        for i, j in zip(true, pred):
+        for i, j in tqdm(zip(true, pred), desc="Calculate metrics"):
             bleu, rouge1, rouge2, rouge3, meteor = self.calculate_metrics(i , j)
             BLUE.append(bleu)
             ROUGE1.append(rouge1)
