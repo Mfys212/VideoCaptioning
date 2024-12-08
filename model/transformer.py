@@ -38,7 +38,7 @@ class TransformerBlock(tf.keras.layers.Layer):
         return out
 
 class TransformerEncoder(tf.keras.Layer):
-    def __init__(self, num_heads, num_l, EMBED_DIM, vocab, **kwargs):
+    def __init__(self, num_heads, num_l, SEQ_LENGTH, EMBED_DIM, vocab, **kwargs):
         super().__init__(**kwargs)
         self.token_embeddings = layers.Embedding(
             input_dim=len(vocab), output_dim=EMBED_DIM
@@ -59,7 +59,7 @@ class TransformerEncoder(tf.keras.Layer):
         return inputs
 
 class TransformerDecoder(tf.keras.Layer):
-    def __init__(self, num_heads, num_l, EMBED_DIM, vocab, **kwargs):
+    def __init__(self, num_heads, num_l, SEQ_LENGTH, EMBED_DIM, vocab, **kwargs):
         super().__init__(**kwargs)
         self.token_embeddings = layers.Embedding(
             input_dim=len(vocab), output_dim=EMBED_DIM
