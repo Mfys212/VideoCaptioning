@@ -204,7 +204,13 @@ class MainModel(keras.Model):
         return self.call(prompt)
 
     def eval_metrics(self, valid_dataset):
-        batch_inp, batch_out = valid_dataset
+        batch_inp, batch_out = [], []
+        for inp, out in valid_data:
+            batch_inp.append(batch_inp)
+            batch_out.append(batch_out)
+        batch_inp = tf.concat(batch_inp, axis=0)
+        batch_out = tf.concat(batch_out, axis=0)
+        
         mask = tf.math.not_equal(batch_inp, 0)
         encoder_out = self.encoder(batch_inp, training=False, mask=mask)
         mask = tf.math.not_equal(batch_out[:, 1:], 0)
