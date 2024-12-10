@@ -11,7 +11,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
         position_embedding_matrix = self.get_position_encoding(sequence_length, embed_dim)                                          
-        self.position_embedding_layer = Embedding(
+        self.position_embedding_layer = layers.Embedding(
             input_dim=sequence_length, output_dim=embed_dim,
             weights=[position_embedding_matrix],
             trainable=False
