@@ -14,8 +14,8 @@ class PositionalEncoding(tf.keras.layers.Layer):
         angle_rads = position * (1 / tf.pow(10000.0, (2 * i) / tf.cast(embed_dim, tf.float32)))
         pos_encoding = tf.concat([tf.sin(angle_rads), tf.cos(angle_rads)], axis=-1)
         if embed_dim % 2 != 0:
-            extra_sin = tf.sin(position * (1 / tf.pow(10000.0, (embed_dim - 1) / tf.cast(embed_dim, tf.float32))))
-            pos_encoding = tf.concat([pos_encoding, extra_sin], axis=-1)
+            extra_cos = tf.cos(position * (1 / tf.pow(10000.0, (embed_dim - 1) / tf.cast(embed_dim, tf.float32))))
+            pos_encoding = tf.concat([pos_encoding, extra_cos], axis=-1)
         self.positional_encoding = pos_encoding[tf.newaxis, ...]
 
     def call(self, inputs):
