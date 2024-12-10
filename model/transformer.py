@@ -30,7 +30,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
     def call(self, inputs):        
         # position_indices = tf.range(tf.shape(inputs)[-1])
         positional_encoding = self.position_embedding_layer(inputs)
-        return inputs + positional_encoding
+        return positional_encoding
 
 # class PositionalEncoding(tf.keras.layers.Layer):
 #     def __init__(self, sequence_length, embed_dim, **kwargs):
