@@ -28,8 +28,8 @@ class PositionalEncoding(tf.keras.layers.Layer):
  
  
     def call(self, inputs):        
-        position_indices = tf.range(tf.shape(inputs)[-1])
-        positional_encoding = self.position_embedding_layer(position_indices)
+        # position_indices = tf.range(tf.shape(inputs)[-1])
+        positional_encoding = self.position_embedding_layer(inputs)
         return inputs + positional_encoding
 
 # class PositionalEncoding(tf.keras.layers.Layer):
@@ -80,8 +80,8 @@ class TransformerEncoder(tf.keras.Layer):
     def call(self, inputs, training=True, mask=None):
         if mask is not None:
             mask = tf.cast(mask[:, :, tf.newaxis], dtype=tf.int32)
-        inputs = self.token_embeddings(inputs) * self.embed_scale
-        inputs = self.positional_encoding(inputs)
+        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
+        # inputs = self.positional_encoding(inputs)
         for layer in self.attention:
             inputs = layer(query=inputs, key=inputs, value=inputs, mask=mask, training=training)
         return inputs
@@ -111,8 +111,8 @@ class TransformerDecoder(tf.keras.Layer):
             combined_mask = tf.cast(mask[:, tf.newaxis, :], dtype=tf.int32)
             combined_mask = tf.minimum(combined_mask, causal_mask)
 
-        inputs = self.token_embeddings(inputs) * self.embed_scale
-        inputs = self.positional_encoding(inputs)
+        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
+        # inputs = self.positional_encoding(inputs)
         mask_out = self.mask_att(
             query=inputs, key=inputs, value=inputs, attention_mask=combined_mask, training=training
         )
