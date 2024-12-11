@@ -7,46 +7,46 @@ from tqdm import tqdm
 from Transformer.evaluation.evaluation import *
 
 
-# class PositionalEncoding(tf.keras.layers.Layer):
-#     def __init__(self, sequence_length, embed_dim, **kwargs):
-#         super().__init__(**kwargs)
-#         position_embedding_matrix = self.get_position_encoding(sequence_length, embed_dim)                                          
-#         self.position_embedding_layer = layers.Embedding(
-#             input_dim=sequence_length, output_dim=embed_dim,
-#             weights=[position_embedding_matrix],
-#             trainable=False
-#         )
-             
-#     def get_position_encoding(self, seq_len, d, n=10000):
-#         P = np.zeros((seq_len, d))
-#         for k in range(seq_len):
-#             for i in np.arange(int(d/2)):
-#                 denominator = np.power(n, 2*i/d)
-#                 P[k, 2*i] = np.sin(k/denominator)
-#                 P[k, 2*i+1] = np.cos(k/denominator)
-#         return P
- 
- 
-#     def call(self, inputs):        
-#         # position_indices = tf.range(tf.shape(inputs)[-1])
-#         positional_encoding = self.position_embedding_layer(inputs)
-#         return positional_encoding
-
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
-        position = tf.range(sequence_length, dtype=tf.float32)[:, tf.newaxis]
-        i = tf.range(embed_dim // 2, dtype=tf.float32)
-        angle_rads = position * (1 / tf.pow(10000.0, (2 * i) / tf.cast(embed_dim, tf.float32)))
-        pos_encoding = tf.concat([tf.sin(angle_rads), tf.cos(angle_rads)], axis=-1)
-        if embed_dim % 2 != 0:
-            extra_cos = tf.cos(position * (1 / tf.pow(10000.0, (embed_dim - 1) / tf.cast(embed_dim, tf.float32))))
-            pos_encoding = tf.concat([pos_encoding, extra_cos], axis=-1)
-        self.positional_encoding = pos_encoding[tf.newaxis, ...]
+        position_embedding_matrix = self.get_position_encoding(sequence_length, embed_dim)                                          
+        self.position_embedding_layer = layers.Embedding(
+            input_dim=sequence_length, output_dim=embed_dim,
+            weights=[position_embedding_matrix],
+            trainable=False
+        )
+             
+    def get_position_encoding(self, seq_len, d, n=10000):
+        P = np.zeros((seq_len, d))
+        for k in range(seq_len):
+            for i in np.arange(int(d/2)):
+                denominator = np.power(n, 2*i/d)
+                P[k, 2*i] = np.sin(k/denominator)
+                P[k, 2*i+1] = np.cos(k/denominator)
+        return P
+ 
+ 
+    def call(self, inputs):        
+        position_indices = tf.range(tf.shape(inputs)[-1])
+        positional_encoding = self.position_embedding_layer(inputs)
+        return positional_encoding
 
-    def call(self, inputs):
-        length = tf.shape(inputs)[1]
-        return inputs + self.positional_encoding[:, :length, :]
+# class PositionalEncoding(tf.keras.layers.Layer):
+#     def __init__(self, sequence_length, embed_dim, **kwargs):
+#         super().__init__(**kwargs)
+#         position = tf.range(sequence_length, dtype=tf.float32)[:, tf.newaxis]
+#         i = tf.range(embed_dim // 2, dtype=tf.float32)
+#         angle_rads = position * (1 / tf.pow(10000.0, (2 * i) / tf.cast(embed_dim, tf.float32)))
+#         pos_encoding = tf.concat([tf.sin(angle_rads), tf.cos(angle_rads)], axis=-1)
+#         if embed_dim % 2 != 0:
+#             extra_cos = tf.cos(position * (1 / tf.pow(10000.0, (embed_dim - 1) / tf.cast(embed_dim, tf.float32))))
+#             pos_encoding = tf.concat([pos_encoding, extra_cos], axis=-1)
+#         self.positional_encoding = pos_encoding[tf.newaxis, ...]
+
+#     def call(self, inputs):
+#         length = tf.shape(inputs)[1]
+#         return inputs + self.positional_encoding[:, :length, :]
 
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
@@ -80,8 +80,8 @@ class TransformerEncoder(tf.keras.Layer):
     def call(self, inputs, training=True, mask=None):
         if mask is not None:
             mask = tf.cast(mask[:, :, tf.newaxis], dtype=tf.int32)
-        inputs = self.token_embeddings(inputs) * self.embed_scale
-        inputs = self.positional_encoding(inputs)
+        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
+        # inputs = self.positional_encoding(inputs)
         for layer in self.attention:
             inputs = layer(query=inputs, key=inputs, value=inputs, mask=mask, training=training)
         return inputs
@@ -111,8 +111,8 @@ class TransformerDecoder(tf.keras.Layer):
             combined_mask = tf.cast(mask[:, tf.newaxis, :], dtype=tf.int32)
             combined_mask = tf.minimum(combined_mask, causal_mask)
 
-        inputs = self.token_embeddings(inputs) * self.embed_scale
-        inputs = self.positional_encoding(inputs)
+        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
+        # inputs = self.positional_encoding(inputs)
         mask_out = self.mask_att(
             query=inputs, key=inputs, value=inputs, attention_mask=combined_mask, training=training
         )
