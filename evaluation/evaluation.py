@@ -40,7 +40,8 @@ class CalculateMetrics(tf.keras.layers.Layer):
         }
 
     def calculate_metrics(self, reference, hypothesis, use_stemmer=True):
-        references = [ref.split() for ref in reference]
+        # references = [ref.split() for ref in reference]
+        references = [reference.split()]
         hypothesis_tokens = hypothesis.split()
         smoothing_function = SmoothingFunction().method4
         bleu_score = sentence_bleu(references, hypothesis_tokens, smoothing_function=smoothing_function)
