@@ -21,13 +21,16 @@ class CalculateMetrics(tf.keras.layers.Layer):
         pred = [text.lower() for text in pred]
         BLUE, ROUGE1, ROUGE2, ROUGE3, METEOR = [], [], [], [], []
         for i, j in tqdm(zip(true, pred), desc="Calculate metrics"):
-            bleu, rouge1, rouge2, rouge3, meteor = self.calculate_metrics(i , j)
+            try:
+                bleu, rouge1, rouge2, rouge3, meteor = self.calculate_metrics(i , j)
+            except:
+                continue
             BLUE.append(bleu)
             ROUGE1.append(rouge1)
             ROUGE2.append(rouge2)
             ROUGE3.append(rouge3)
             METEOR.append(meteor)
-
+                
         return {
           "BLEU": np.array(BLUE).mean(),
           "ROUGE-1": np.array(ROUGE1).mean(),
