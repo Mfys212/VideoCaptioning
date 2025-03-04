@@ -1,4 +1,4 @@
-If you use this code in your research or development work, please cite the original paper:
+cite the original paper:
 ```
 @misc{arnab2021vivitvideovisiontransformer,
       title={ViViT: A Video Vision Transformer}, 
