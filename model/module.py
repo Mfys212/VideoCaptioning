@@ -1,10 +1,10 @@
 class PatchEmbedding(layers.Layer):
-    def __init__(self, embed_dim, num_frame, patch_height, patch_width, **kwargs):
+    def __init__(self, embed_dim, patch_tem, patch_height, patch_width, **kwargs):
         super().__init__(**kwargs)
         self.projection = layers.Conv3D(
             filters=embed_dim,
-            kernel_size=(num_frame, patch_height, patch_width), 
-            strides=(num_frame, patch_height, patch_width), 
+            kernel_size=(patch_tem, patch_height, patch_width), 
+            strides=(patch_tem, patch_height, patch_width), 
             padding="VALID",
         )
         self.flatten = layers.Reshape(target_shape=(-1, embed_dim))
