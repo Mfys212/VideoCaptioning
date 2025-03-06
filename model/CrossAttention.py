@@ -22,3 +22,26 @@ class EncoderBlock(tf.keras.layers.Layer):
         ffn2 = self.densel(self.dropout(self.dense(Zs), training=training))
         Zs = self.layernorm[3](layers.Add()([ffn2, Zs]))
         return [Zt, Zs]
+
+class Encoder(tf.keras.Model):
+    def __init__(self, d_models, num_heads, num_l, max_frames, **kwargs):
+        super().__init__(**kwargs)
+        self.conv = layers.Conv3D(3, (1, 5, 5), strides=(1, 4, 4), padding='same')
+        self.flatten = layers.TimeDistributed(layers.Flatten())
+        self.linear = layers.Dense(d_models)
+        self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
+        self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
+        self.s_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
+        self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
+        self.out = layers.Dense(d_models, activation="gelu")
+
+    def call(self, inputs, training=True, mask=None):
+        tem = self.linear(self.flatten(self.conv(inputs)))
+        Zt = layers.Add()([frame, self.t_positional_encoding(frame)])
+        spa = self.patch_embedding(inputs)
+        Zs = layers.Add()([spa, self.s_positional_encoding(patch)])
+        for block in self.blocks:
+            Zt, Zs = block(Zt, Zs, mask, training)
+        out = tf.concat([Zs, Zt], axis=1)
+        out = self.out(out)
+        return out
