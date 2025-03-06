@@ -24,14 +24,15 @@ class EncoderBlock(tf.keras.layers.Layer):
         return [Zt, Zs]
 
 class Encoder(tf.keras.Model):
-    def __init__(self, d_models, num_heads, num_l, max_frames, **kwargs):
+    def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.conv = layers.Conv3D(3, (1, 5, 5), strides=(1, 4, 4), padding='same')
         self.flatten = layers.TimeDistributed(layers.Flatten())
         self.linear = layers.Dense(d_models)
         self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
+        num_patch = int((max_frames*spatial_size**2) / (1*16*16))
         self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
-        self.s_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
+        self.s_positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.out = layers.Dense(d_models, activation="gelu")
 
