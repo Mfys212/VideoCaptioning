@@ -1,52 +1,184 @@
-import pandas as pd
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.layers import TextVectorization
-import numpy as np
+exs = (".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".3gp")
 
-class DataLoader():
-    def __init__(self, train, valid, VOCAB_SIZE, SEQ_LENGTH, BATCH_SIZE):
-        self.col = train.columns
-        train = train[~train[self.col[0]].str.strip().eq('')]
-        train = train[~train[self.col[1]].str.strip().eq('')]
-        valid = valid[~valid[self.col[0]].str.strip().eq('')]
-        valid = valid[~valid[self.col[1]].str.strip().eq('')]
-        self.train, self.valid = train.copy(), valid.copy()
-        self.SEQ_LENGTH = SEQ_LENGTH
-        self.vectorizer = TextVectorization(
-            max_tokens = VOCAB_SIZE,
-            output_sequence_length = SEQ_LENGTH,
-            output_mode = "int",
-            standardize = self.custom_standardization
-        )
-        df = pd.concat([train, valid], ignore_index=True)
-        self.train[self.col[1]] = self.train[self.col[1]].apply(lambda x: f"<start> {x} <end>")
-        self.valid[self.col[1]] = self.valid[self.col[1]].apply(lambda x: f"<start> {x} <end>")
-        text = df[self.col[0]].tolist() + df[self.col[1]].tolist()
-        self.vectorizer.adapt(text)
-        self.BATCH_SIZE = BATCH_SIZE
+# Load captions data
+def load_captions_data(filename, SEQ_LENGTH):
+    """Loads captions (text) data and maps them to corresponding videos."""
+    with open(filename) as caption_file:
+        caption_data = caption_file.readlines()
+        caption_mapping = {}
+        text_data = []
+        videos_to_skip = set()
 
-    def get_data(self):
-        train = self.create_dataset(self.train)
-        valid = self.create_dataset(self.valid)
-        return train, valid, self.vectorizer
-    
-    def custom_standardization(self, input_string):
+        for line in caption_data:
+            line = line.rstrip("\n")
+            parts = line.split(" ", 1)
+            if len(parts) < 1:
+                continue
+            video_name, caption = parts
+            caption = caption.strip()
+            # Skip empty captions
+            if not caption or caption == 0:
+                continue
+            tokens = caption.split()
+            if len(tokens) < 1 or len(tokens) > SEQ_LENGTH:
+                videos_to_skip.add(video_name)
+                continue
+            video_name = os.path.join(VIDEOS_PATH, video_name.strip() + '.avi')
+            if video_name.endswith(exs) and video_name not in videos_to_skip:
+                caption = "<start> " + caption + " <end>"
+                text_data.append(caption)
+                if video_name in caption_mapping:
+                    caption_mapping[video_name].append(caption)
+                else:
+                    caption_mapping[video_name] = [caption]
+
+        for video_name in videos_to_skip:
+            if video_name in caption_mapping:
+                del caption_mapping[video_name]
+
+        return caption_mapping, text_data
+
+# Split data into training and validation sets
+def train_val_split(caption_data, train_size=0.8, shuffle=True):
+    all_videos = list(caption_data.keys())
+    if shuffle:
+        np.random.shuffle(all_videos)
+    train_size = int(len(caption_data) * train_size)
+    training_data = {
+        video_name: caption_data[video_name] for video_name in all_videos[:train_size]
+    }
+    validation_data = {
+        video_name: caption_data[video_name] for video_name in all_videos[train_size:]
+    }
+    return training_data, validation_data
+
+def vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH):
+    def custom_standardization(input_string):
         return tf.strings.lower(input_string)
     
-    def preprocess(self, text):
-        text = self.vectorizer(text)
-        text.set_shape([self.SEQ_LENGTH])
-        return text
+    vectorization = TextVectorization(
+        max_tokens=VOCAB_SIZE,
+        output_mode="int",
+        output_sequence_length=SEQ_LENGTH,
+        standardize=custom_standardization,
+    )
+    vectorization.adapt(text_data)
+    return vectorization
 
-    def create_dataset(self, df):
-        dataset = []
-        for i in self.col:
-            data = tf.data.Dataset.from_tensor_slices(df[i]).map(
-                      self.preprocess, num_parallel_calls=tf.data.AUTOTUNE
-                  )
-            dataset.append(data)
-        dataset = tf.data.Dataset.zip((dataset[0], dataset[1]))
-        dataset = dataset.batch(self.BATCH_SIZE).shuffle(256).prefetch(tf.data.AUTOTUNE)
-        return dataset
+def process_frames(FRAMES_STORAGE_PATH, captions_mapping, IMAGE_SIZE, MAX_FRAMES):
+    def save_video_frames(video_path, output_dir, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
+        cap = cv2.VideoCapture(video_path)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        os.makedirs(output_dir, exist_ok=True)
+        if total_frames <= max_frames:
+            selected_frames = list(range(total_frames))
+        else:
+            selected_frames = np.linspace(0, total_frames - 1, max_frames, dtype=int)
+        
+        for idx, frame_idx in enumerate(selected_frames):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    #         frame = cv2.resize(frame, size)
+            frame_filename = os.path.join(output_dir, f"frame_{idx:04d}.jpg")
+            cv2.imwrite(frame_filename, frame)
+    
+        cap.release()
+    
+    if not os.path.exists(FRAMES_STORAGE_PATH):
+        video_paths = list(captions_mapping.keys())
+    
+        with ThreadPoolExecutor(max_workers=cpu_count+2) as executor:
+            list(tqdm(executor.map(
+                lambda video_path: save_video_frames(video_path, os.path.join(FRAMES_STORAGE_PATH, os.path.basename(video_path).split('.')[0])),
+                video_paths
+            ), total=len(video_paths), desc="Saving frames"))
+
+def save_video_frames(video_path, output_dir, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
+    cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    os.makedirs(output_dir, exist_ok=True)
+    if total_frames <= max_frames:
+        selected_frames = list(range(total_frames))
+    else:
+        selected_frames = np.linspace(0, total_frames - 1, max_frames, dtype=int)
+    
+    for idx, frame_idx in enumerate(selected_frames):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#         frame = cv2.resize(frame, size)
+        frame_filename = os.path.join(output_dir, f"frame_{idx:04d}.jpg")
+        cv2.imwrite(frame_filename, frame)
+
+    cap.release()
+
+if not os.path.exists(FRAMES_STORAGE_PATH):
+    video_paths = list(captions_mapping.keys())
+
+    with ThreadPoolExecutor(max_workers=cpu_count+2) as executor:
+        list(tqdm(executor.map(
+            lambda video_path: save_video_frames(video_path, os.path.join(FRAMES_STORAGE_PATH, os.path.basename(video_path).split('.')[0])),
+            video_paths
+        ), total=len(video_paths), desc="Saving frames"))
+
+
+def load_frames_from_directory(directory, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
+    try:
+        directory = directory.numpy().decode('utf-8')
+    except:
+        pass
+    frame_files = sorted(glob(os.path.join(directory, "*.jpg")))
+    frames = []
+    for frame_file in frame_files[:max_frames]:
+        frame = tf.io.read_file(frame_file)
+        frame = tf.image.decode_jpeg(frame, channels=3)
+        frame = tf.image.resize(frame, size)
+        frames.append(frame)
+
+    if len(frames) < max_frames:
+        padding = [tf.zeros((size[0], size[1], 3), dtype=tf.float32)] * (max_frames - len(frames))
+        frames.extend(padding)
+
+    video_tensor = tf.stack(frames, axis=0)
+    return video_tensor
+
+def tf_load_frames_from_directory(directory):
+    video_tensor = tf.py_function(
+        func=load_frames_from_directory,
+        inp=[directory],
+        Tout=tf.float32
+    )
+    
+    video_tensor.set_shape((MAX_FRAMES, IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
+    return video_tensor
+
+def pad_captions(captions, max_captions=NUM_CAPTIONS):
+    captions_unique = list(set(captions))
+
+    if len(captions_unique) > max_captions:
+        captions_padded = captions_unique[:max_captions]
+    else:
+        captions_padded = list(islice(cycle(captions_unique), max_captions))
+
+    return captions_padded
+
+def make_dataset_from_frames(frame_directories, captions, vectorization, split="train"):
+    frame_dataset = tf.data.Dataset.from_tensor_slices(frame_directories).map(
+        tf_load_frames_from_directory, num_parallel_calls=AUTOTUNE
+    )
+
+    captions_padded = list(map(pad_captions, captions))
+    cap_dataset = tf.data.Dataset.from_tensor_slices(captions_padded).map(
+        vectorization, num_parallel_calls=AUTOTUNE
+    )
+
+    dataset = tf.data.Dataset.zip((frame_dataset, cap_dataset))
+    dataset = dataset.batch(BATCH_SIZE).shuffle(256).prefetch(AUTOTUNE)
+    return dataset
