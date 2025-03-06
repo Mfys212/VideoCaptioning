@@ -1,4 +1,4 @@
-class CreateModel(keras.Model):
+class CreateModel():
     def __init__(self, seed=False, multigpu=False):
         super().__init__()
         if seed:
