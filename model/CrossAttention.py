@@ -30,7 +30,7 @@ class Encoder(tf.keras.Model):
         self.flatten = layers.TimeDistributed(layers.Flatten())
         self.linear = layers.Dense(d_models)
         self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
-        num_patch = int((max_frames*spatial_size**2) / (1*16*16))
+        num_patch = int((max_frames*spatial_size**2) / (max_frames*16*16))
         self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
         self.s_positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
@@ -38,9 +38,9 @@ class Encoder(tf.keras.Model):
 
     def call(self, inputs, training=True, mask=None):
         tem = self.linear(self.flatten(self.conv(inputs)))
-        Zt = layers.Add()([frame, self.t_positional_encoding(frame)])
+        Zt = layers.Add()([tem, self.t_positional_encoding(tem)])
         spa = self.patch_embedding(inputs)
-        Zs = layers.Add()([spa, self.s_positional_encoding(patch)])
+        Zs = layers.Add()([spa, self.s_positional_encoding(spa)])
         for block in self.blocks:
             Zt, Zs = block(Zt, Zs, mask, training)
         out = tf.concat([Zs, Zt], axis=1)
