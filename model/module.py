@@ -1,52 +1,32 @@
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.layers import TextVectorization
-import numpy as np
-from tqdm import tqdm 
-from Transformer.evaluation.evaluation import *
+class PatchEmbedding(layers.Layer):
+    def __init__(self, embed_dim, num_frame, patch_height, patch_width, **kwargs):
+        super().__init__(**kwargs)
+        self.projection = layers.Conv3D(
+            filters=embed_dim,
+            kernel_size=(num_frame, patch_height, patch_width), 
+            strides=(num_frame, patch_height, patch_width), 
+            padding="VALID",
+        )
+        self.flatten = layers.Reshape(target_shape=(-1, embed_dim))
 
+    def call(self, videos):
+        projected_patches = self.projection(videos)
+        flattened_patches = self.flatten(projected_patches)
+        return flattened_patches
 
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
-        position_embedding_matrix = self.get_position_encoding(sequence_length, embed_dim)                                          
-        self.position_embedding_layer = layers.Embedding(
-            input_dim=sequence_length, output_dim=embed_dim,
-            weights=[position_embedding_matrix],
-            trainable=False
+        self.positional_encoding = self.add_weight(
+            "positional_encoding",
+            shape=(1, sequence_length, embed_dim),
+            initializer=tf.keras.initializers.RandomNormal(),
+            trainable=True
         )
-             
-    def get_position_encoding(self, seq_len, d, n=10000):
-        P = np.zeros((seq_len, d))
-        for k in range(seq_len):
-            for i in np.arange(int(d/2)):
-                denominator = np.power(n, 2*i/d)
-                P[k, 2*i] = np.sin(k/denominator)
-                P[k, 2*i+1] = np.cos(k/denominator)
-        return P
- 
- 
-    def call(self, inputs):        
-        position_indices = tf.range(tf.shape(inputs)[-1])
-        positional_encoding = self.position_embedding_layer(inputs)
-        return positional_encoding
-
-# class PositionalEncoding(tf.keras.layers.Layer):
-#     def __init__(self, sequence_length, embed_dim, **kwargs):
-#         super().__init__(**kwargs)
-#         position = tf.range(sequence_length, dtype=tf.float32)[:, tf.newaxis]
-#         i = tf.range(embed_dim // 2, dtype=tf.float32)
-#         angle_rads = position * (1 / tf.pow(10000.0, (2 * i) / tf.cast(embed_dim, tf.float32)))
-#         pos_encoding = tf.concat([tf.sin(angle_rads), tf.cos(angle_rads)], axis=-1)
-#         if embed_dim % 2 != 0:
-#             extra_cos = tf.cos(position * (1 / tf.pow(10000.0, (embed_dim - 1) / tf.cast(embed_dim, tf.float32))))
-#             pos_encoding = tf.concat([pos_encoding, extra_cos], axis=-1)
-#         self.positional_encoding = pos_encoding[tf.newaxis, ...]
-
-#     def call(self, inputs):
-#         length = tf.shape(inputs)[1]
-#         return inputs + self.positional_encoding[:, :length, :]
+    
+    def call(self, inputs):
+        length = tf.shape(inputs)[1]
+        return self.positional_encoding[:, :length, :]
 
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
@@ -65,54 +45,29 @@ class TransformerBlock(tf.keras.layers.Layer):
         out = self.layernorm_2(layers.Add()([inputs, out_1]))
         return out
 
-class TransformerEncoder(tf.keras.Layer):
-    def __init__(self, num_heads, num_l, SEQ_LENGTH, EMBED_DIM, vocab, **kwargs):
+class TransformerDecoderBlock(tf.keras.Model):
+    def __init__(self, d_models, num_heads, vocab_size, seq_length, num_l, **kwargs):
         super().__init__(**kwargs)
-        self.token_embeddings = layers.Embedding(
-            input_dim=len(vocab), output_dim=EMBED_DIM
-        )
-        self.embed_scale = tf.math.sqrt(tf.cast(EMBED_DIM, tf.float32))
-        self.positional_encoding = PositionalEncoding(
-            sequence_length=SEQ_LENGTH, embed_dim=EMBED_DIM
-        )
-        self.attention = [TransformerBlock(EMBED_DIM, num_heads) for _ in range(num_l)]
-
-    def call(self, inputs, training=True, mask=None):
-        if mask is not None:
-            mask = tf.cast(mask[:, :, tf.newaxis], dtype=tf.int32)
-        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
-        # inputs = self.positional_encoding(inputs)
-        for layer in self.attention:
-            inputs = layer(query=inputs, key=inputs, value=inputs, mask=mask, training=training)
-        return inputs
-
-class TransformerDecoder(tf.keras.Layer):
-    def __init__(self, num_heads, num_l, SEQ_LENGTH, EMBED_DIM, vocab, **kwargs):
-        super().__init__(**kwargs)
-        self.token_embeddings = layers.Embedding(
-            input_dim=len(vocab), output_dim=EMBED_DIM
-        )
-        self.embed_scale = tf.math.sqrt(tf.cast(EMBED_DIM, tf.float32))
-        self.positional_encoding = PositionalEncoding(
-            sequence_length=SEQ_LENGTH, embed_dim=EMBED_DIM
-        )
+        self.token_embeddings = layers.Embedding(input_dim=vocab_size, output_dim=d_models)
+        self.embed_scale = tf.math.sqrt(tf.cast(d_models, tf.float32))
+        self.positional_encoding = PositionalEncoding(sequence_length=seq_length, embed_dim=d_models)
         self.mask_att = layers.MultiHeadAttention(
-            num_heads=num_heads, key_dim=EMBED_DIM // num_heads, dropout=0.1
+            num_heads=num_heads, key_dim=d_models // num_heads, dropout=0.1
         )
         self.layernorm = layers.LayerNormalization()
-        self.attention = [TransformerBlock(EMBED_DIM, num_heads) for _ in range(num_l)]
-        self.linear = layers.Dense(EMBED_DIM)
-        self.out = layers.Dense(len(vocab))
-
-    def call(self, inputs, en_out, training=True, mask=None):
+        self.attention = [TransformerBlock(d_models, num_heads) for _ in range(num_l)]
+        self.linear = layers.Dense(d_models,)
+        self.out = layers.Dense(vocab_size)
+    
+    def call(self, inp, training=True):
+        inputs, en_out, mask = inp
+        inputs = self.token_embeddings(inputs)
+        inputs = layers.Add()([inputs * self.embed_scale, self.positional_encoding(inputs)])
         causal_mask = self.get_causal_attention_mask(inputs)
         if mask is not None:
             padding_mask = tf.cast(mask[:, :, tf.newaxis], dtype=tf.int32)
             combined_mask = tf.cast(mask[:, tf.newaxis, :], dtype=tf.int32)
             combined_mask = tf.minimum(combined_mask, causal_mask)
-
-        inputs = (self.token_embeddings(inputs) * self.embed_scale) + self.positional_encoding(inputs)
-        # inputs = self.positional_encoding(inputs)
         mask_out = self.mask_att(
             query=inputs, key=inputs, value=inputs, attention_mask=combined_mask, training=training
         )
@@ -133,127 +88,3 @@ class TransformerDecoder(tf.keras.Layer):
             axis=0,
         )
         return tf.tile(mask, mult)
-
-class MainModel(keras.Model):
-    def __init__(self, encoder, decoder, vectorization, SEQ_LENGTH):
-        super().__init__()
-        self.encoder = encoder
-        self.decoder = decoder
-        self.loss_tracker = keras.metrics.Mean(name="loss")
-        self.acc_tracker = keras.metrics.Mean(name="accuracy")
-        self.vectorization = vectorization
-        self.SEQ_LENGTH = SEQ_LENGTH
-        self.vocab = self.vectorization.get_vocabulary()
-        self.index_lookup = dict(zip(range(len(self.vocab)), self.vocab))
-        self.max_decoded_sentence_length = SEQ_LENGTH - 1
-
-    def calculate_loss(self, y_true, y_pred, mask):
-        loss = self.loss(y_true, y_pred)
-        mask = tf.cast(mask, dtype=loss.dtype)
-        loss *= mask
-        return tf.reduce_sum(loss) / tf.reduce_sum(mask)
-
-    def calculate_accuracy(self, y_true, y_pred, mask):
-        accuracy = tf.equal(y_true, tf.argmax(y_pred, axis=2))
-        accuracy = tf.math.logical_and(mask, accuracy)
-        accuracy = tf.cast(accuracy, dtype=tf.float32)
-        mask = tf.cast(mask, dtype=tf.float32)
-        return tf.reduce_sum(accuracy) / tf.reduce_sum(mask)
-
-    def compute_loss_acc(self, pred, true, mask=None):
-        loss = self.calculate_loss(true, pred, mask)
-        acc = self.calculate_accuracy(true, pred, mask)
-        return loss, acc
-
-    def train_step(self, batch_data):
-        batch_inp, batch_out = batch_data
-        batch_loss = 0
-        batch_acc = 0
-        with tf.GradientTape() as tape:
-            mask = tf.math.not_equal(batch_inp, 0)
-            encoder_out = self.encoder(batch_inp, training=True, mask=mask)
-            mask = tf.math.not_equal(batch_out[:, 1:], 0)
-            out = self.decoder(batch_out[:, :-1], encoder_out, mask=mask, training=True)
-            batch_loss, batch_acc = self.compute_loss_acc(out, batch_out[:, 1:], mask=mask)
-
-        train_vars = (
-            self.encoder.trainable_variables +
-            self.decoder.trainable_variables
-        )
-
-        grads = tape.gradient(batch_loss, train_vars)
-        self.optimizer.apply_gradients(zip(grads, train_vars))
-
-        self.loss_tracker.update_state(batch_loss)
-        self.acc_tracker.update_state(batch_acc)
-
-        return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
-
-    def test_step(self, batch_data):
-        batch_inp, batch_out = batch_data
-        batch_loss = 0
-        batch_acc = 0
-
-        mask = tf.math.not_equal(batch_inp, 0)
-        encoder_out = self.encoder(batch_inp, training=False, mask=mask)
-        mask = tf.math.not_equal(batch_out[:, 1:], 0)
-        out = self.decoder(batch_out[:, :-1], encoder_out, mask=mask, training=False)
-        batch_loss, batch_acc = self.compute_loss_acc(out, batch_out[:, 1:], mask=mask)
-
-        self.loss_tracker.update_state(batch_loss)
-        self.acc_tracker.update_state(batch_acc)
-
-        return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
-
-    def call(self, prompt):
-        text = self.vectorization([prompt])
-        mask = tf.math.not_equal(text, 0)
-        encoded_out = self.encoder(text, training=False, mask=mask)
-
-        decoded_caption = "<start>"
-        for i in range(self.max_decoded_sentence_length):
-            tokenized_caption = self.vectorization([decoded_caption])[:, :-1]
-            mask = tf.math.not_equal(tokenized_caption, 0)
-            predictions = self.decoder(tokenized_caption, encoded_out, mask=mask, training=False)
-            sampled_token_index = np.argmax(predictions[0, i, :])
-            sampled_token = self.index_lookup[sampled_token_index]
-            if sampled_token == "<end>":
-                break
-            decoded_caption += " " + sampled_token
-
-        decoded_caption = decoded_caption.replace("<start> ", "")
-        decoded_caption = decoded_caption.replace("[UNK]", "")
-        decoded_caption = decoded_caption.replace(" <end>", "").strip()
-        return decoded_caption
-
-    def predict(self, prompt):
-        return self.call(prompt)
-
-    def eval_metrics(self, valid_dataset):
-        col = valid_dataset.columns
-        true_text = valid_dataset[col[1]].str.replace(r'\b(<start>|<end>)\b', '', regex=True).str.strip()
-        pred_text = []
-
-        for i in tqdm(valid_dataset[col[0]], desc="Processing predictions"):
-            pred_text.append(self.call(i))
-
-        pred_text = tf.constant(pred_text)
-        true_text = tf.constant(true_text)
-        cal_metrics = CalculateMetrics()
-        results = cal_metrics(true_text, pred_text)
-        for key in results:
-            if results[key] == 0.0:
-                results[key] += 0.0001
-            if results[key] < 0.1:
-                results[key] *= 2
-            elif 0.1 <= results[key] < 0.2:
-                results[key] *= 1.5 
-            elif 0.2 <= results[key] < 0.6:
-                results[key] *= 1.2
-            elif 0.6 <= results[key] < 0.7:
-                results[key] *= 1.05 
-        return results
-
-    @property
-    def metrics(self):
-        return [self.loss_tracker, self.acc_tracker]
