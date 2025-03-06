@@ -73,27 +73,27 @@ class MainModel(keras.Model):
         return [self.loss_tracker, self.acc_tracker]
 
 def DefineCompile(self, D_MODELS)
-        cross_entropy = keras.losses.SparseCategoricalCrossentropy(
-            from_logits=True, reduction="none"
-        )
-        early_stopping = keras.callbacks.EarlyStopping(patience=15, restore_best_weights=True)
-        class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-            def __init__(self, d_model, warmup_steps=4000):
-                super(CustomSchedule, self).__init__()
-                self.d_model = tf.cast(d_model, tf.float32)
-                self.warmup_steps = warmup_steps
-        
-            def __call__(self, step):
-                step = tf.cast(step, tf.float32)
-                arg1 = tf.math.rsqrt(step)
-                arg2 = step * (self.warmup_steps ** -1.5)
-                return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
-        
-        lr_schedule = CustomSchedule(D_MODELS)
-        optimizer = tf.keras.optimizers.Adam(
-            learning_rate=lr_schedule,
-            beta_1=0.9,                 
-            beta_2=0.98,                
-            epsilon=1e-9                
-        )
-        return cross_entropy, early_stopping, optimizer
+    cross_entropy = keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True, reduction="none"
+    )
+    early_stopping = keras.callbacks.EarlyStopping(patience=15, restore_best_weights=True)
+    class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
+        def __init__(self, d_model, warmup_steps=4000):
+            super(CustomSchedule, self).__init__()
+            self.d_model = tf.cast(d_model, tf.float32)
+            self.warmup_steps = warmup_steps
+    
+        def __call__(self, step):
+            step = tf.cast(step, tf.float32)
+            arg1 = tf.math.rsqrt(step)
+            arg2 = step * (self.warmup_steps ** -1.5)
+            return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
+    
+    lr_schedule = CustomSchedule(D_MODELS)
+    optimizer = tf.keras.optimizers.Adam(
+        learning_rate=lr_schedule,
+        beta_1=0.9,                 
+        beta_2=0.98,                
+        epsilon=1e-9                
+    )
+    return cross_entropy, early_stopping, optimizer
