@@ -1,51 +1,60 @@
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
-from tensorflow.keras.layers import TextVectorization
-import numpy as np
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-from nltk.translate.meteor_score import meteor_score
-from rouge_score import rouge_scorer
-from tqdm import tqdm 
-import nltk
-nltk.download('wordnet')
+class EvalMetrics():
+    def __init__(self, model, vectorization, SEQ_LENGTH, valid_data, FRAMES_STORAGE_PATH):
+        self.model = model
+        self.vectorization = vectorization
+        self.vocab = vectorization.get_vocabulary()
+        self.index_lookup = dict(zip(range(len(self.vocab)), self.vocab))
+        self.max_decoded_sentence_length = SEQ_LENGTH - 1
+        self.valid_videos = list(valid_data.keys())
+        self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
+        self.valid_data = valid_data
 
-class CalculateMetrics(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-    
-    def call(self, true, pred):
-        true = [item.decode('utf-8') for item in true.numpy()]
-        pred = [item.decode('utf-8') for item in pred.numpy()]
-        true = [text.lower() for text in true]
-        pred = [text.lower() for text in pred]
-        BLUE, ROUGE1, ROUGE2, ROUGE3, METEOR = [], [], [], [], []
-        for i, j in tqdm(zip(true, pred), desc="Calculate metrics"):
-            try:
-                bleu, rouge1, rouge2, rouge3, meteor = self.calculate_metrics(i , j)
-            except:
-                continue
-            BLUE.append(bleu)
-            ROUGE1.append(rouge1)
-            ROUGE2.append(rouge2)
-            ROUGE3.append(rouge3)
-            METEOR.append(meteor)
-                
-        return {
-          "BLEU": np.array(BLUE).mean(),
-          "ROUGE-1": np.array(ROUGE1).mean(),
-          "ROUGE-2": np.array(ROUGE2).mean(),
-          "ROUGE-L": np.array(ROUGE3).mean(),
-          "METEOR": np.array(METEOR).mean()
+    def generate_caption(self, video_path):
+        if video_path is None:
+            sample_video = np.random.choice(self.valid_videos)
+        else:
+            sample_video = video_path
+            
+        video_name = os.path.splitext(os.path.basename(sample_video))[0]
+        video_storage_path = os.path.join(self.FRAMES_STORAGE_PATH, video_name)
+        if not os.path.exists(video_storage_path) or len(os.listdir(video_storage_path)) == 0:
+            save_video_frames(sample_video, video_storage_path)
+        video_frames = tf_load_frames_from_directory(video_storage_path)
+        video_frames = tf.expand_dims(video_frames, axis=0) 
+        encoded_frames = self.model.encoder(video_frames)
+        decoded_caption = "<start>"
+        
+        for i in range(self.max_decoded_sentence_length):
+            tokenized_caption = self.vectorization([decoded_caption])[:, :-1]
+            mask = tf.math.not_equal(tokenized_caption, 0)
+            predictions = self.model.decoder([tokenized_caption, encoded_frames, mask])
+            sampled_token_index = np.argmax(predictions[0, i, :])
+            sampled_token = self.index_lookup[sampled_token_index]
+            if sampled_token == "<end>":
+                break
+            decoded_caption += " " + sampled_token
+            
+        decoded_caption = decoded_caption.replace("<start> ", "")
+        decoded_caption = decoded_caption.replace(" <end>", "").strip()
+        return decoded_caption
+
+    def acc_loss():
+        acc, loss = self.model.evaluate(self.valid_data, verbose=0)
+        return acc, loss
+
+    def compute_cider():
+        references, hypotheses, val = {}, {}, {}
+        val = {
+            key: [text.replace("<start> ", "").replace(" <end>", "") for text in value]
+            for key, value in self.valid_data.items()
         }
-
-    def calculate_metrics(self, reference, hypothesis, use_stemmer=True):
-        # references = [ref.split() for ref in reference]
-        references = [reference.split()]
-        hypothesis_tokens = hypothesis.split()
-        smoothing_function = SmoothingFunction().method4
-        bleu_score = sentence_bleu(references, hypothesis_tokens, smoothing_function=smoothing_function)
-        rouge_scorer_obj = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=use_stemmer)
-        rouge_scores = rouge_scorer_obj.score(reference[0], hypothesis)
-        meteor = meteor_score(references, hypothesis_tokens)
-        return bleu_score, rouge_scores["rouge1"].fmeasure, rouge_scores["rouge2"].fmeasure, rouge_scores["rougeL"].fmeasure, meteor
+    
+        for video_path, reference_captions in tqdm(val.items(), desc="Compute Score"):
+            generated_caption = self.generate_caption(video_path)
+            video_name = os.path.splitext(os.path.basename(video_path))[0]
+            references[video_name] = reference_captions
+            hypotheses[video_name] = [generated_caption]
+    
+        cider_scorer = Cider()
+        score, _ = cider_scorer.compute_score(references, hypotheses)
+        return score
