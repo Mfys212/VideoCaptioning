@@ -1,3 +1,19 @@
+import os
+import re
+import numpy as np
+import cv2
+from tqdm import tqdm
+from glob import glob
+from itertools import islice, cycle
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.layers import TextVectorization
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import multiprocessing
+cpu_count = multiprocessing.cpu_count()
+
+AUTOTUNE = tf.data.AUTOTUNE
 exs = (".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".3gp")
 
 # Load captions data
