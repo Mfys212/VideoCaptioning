@@ -2,6 +2,9 @@ import os
 import tensorflow as tf
 import numpy as np
 from VideoCaptioning.data import *
+from VideoCaptioning.evaluation import *
+from VideoCaptioning.model import *
+from VideoCaptioning.train import *
 
 class CreateModel():
     def __init__(self, seed=False, multigpu=False):
