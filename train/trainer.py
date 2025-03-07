@@ -1,3 +1,7 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
 class MainModel(keras.Model):
     def __init__(self, encoder, decoder, num_captions_per_video=NUM_CAPTIONS):
         super().__init__()
