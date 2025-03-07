@@ -65,7 +65,8 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def FactorisedEncoder(self):
+    def FactorisedEncoder(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
+                            NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         if self.multigpu == True:
             with strategy.scope():
                 encoder, decoder, model = self.DefineModel(FacrorisedEncoder.Encoder, module.Decoder, D_MODELS, 
@@ -86,10 +87,12 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def FactorisedSelfAttention(self):
+    def FactorisedSelfAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
+                               NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         pass
 
-    def FactorisedDotProductAttention(self):
+    def FactorisedDotProductAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
+                                    NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         pass
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
