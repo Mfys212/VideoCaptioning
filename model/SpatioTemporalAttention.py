@@ -1,3 +1,8 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from .module import *
+
 class EncoderBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
         super().__init__(**kwargs)
