@@ -1,3 +1,7 @@
+import os
+import tensorflow as tf
+import numpy as np
+
 class CreateModel():
     def __init__(self, seed=False, multigpu=False):
         super().__init__()
