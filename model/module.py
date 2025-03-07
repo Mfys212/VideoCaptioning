@@ -1,3 +1,7 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
 class PatchEmbedding(layers.Layer):
     def __init__(self, embed_dim, patch_tem, patch_height, patch_width, **kwargs):
         super().__init__(**kwargs)
