@@ -33,7 +33,7 @@ class Encoder(tf.keras.Model):
     def call(self, inputs, training=True, mask=None):
         Z = tf.split(inputs, num_or_size_splits=4, axis=1)
         Z = [self.patch_embedding(z) for z in Z]
-        for z in range(len(Z)):    
+        for i in range(len(Z)):    
             z = layers.Add()([Z[i], self.Spositional_encoding(Z[i])])
             for block in self.blocks_spatial:
                 z = block(z, mask, training)
