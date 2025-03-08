@@ -15,7 +15,7 @@ class CreateModel():
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
-        self.FRAMES_STORAGE_PATH = None
+        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = None
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
                  VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES):
@@ -69,10 +69,10 @@ class CreateModel():
                             NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         if self.multigpu == True:
             with strategy.scope():
-                encoder, decoder, model = self.DefineModel(FacrorisedEncoder.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(FacrorisedEncoder.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -117,10 +117,11 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def fit(self, CAPTIONS_PATH, EPOCHS, train_size=0.8):
-        if self.train_data is None:
+    def fit(self, CAPTIONS_PATH, EPOCHS, NUM_CAPTIONS=40, train_size=0.8):
+        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS :
+            self.NUM_CAPTIONS = NUM_CAPTIONS
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
-                 self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES)
+                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, NUM_CAPTIONS)
         if self.multigpu == True:
             with strategy.scope():
                 cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
