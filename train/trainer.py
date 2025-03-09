@@ -76,7 +76,7 @@ class MainModel(keras.Model):
     def metrics(self):
         return [self.loss_tracker, self.acc_tracker]
 
-def DefineCompile(self, D_MODELS)
+def DefineCompile(self, D_MODELS):
     cross_entropy = keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction="none"
     )
