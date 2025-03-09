@@ -28,7 +28,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         Zs = self.layernorm[3](layers.Add()([ffn2, Zs]))
         return [Zt, Zs]
 
-class Encoder(tf.keras.Model):
+class Encoder(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.conv = layers.Conv3D(3, (1, 5, 5), strides=(1, 4, 4), padding='same')
