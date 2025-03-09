@@ -18,8 +18,8 @@ class CreateModel():
         self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = self.BATCH_SIZE = None
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
-                 VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE):
-        captions_mapping, text_data = load_captions_data(CAPTIONS_PATH, SEQ_LENGTH)
+                 VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH):
+        captions_mapping, text_data = load_captions_data(CAPTIONS_PATH, SEQ_LENGTH, VIDEOS_PATH)
         train_data, valid_data = train_val_split(captions_mapping, train_size)
         vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
         process_frames(FRAMES_STORAGE_PATH, captions_mapping, SPATIAL_SIZE, MAX_FRAMES)
@@ -141,6 +141,7 @@ class CreateModel():
                        VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = int((SPATIAL_SIZE/16)**2) + MAX_FRAMES
         if self.multigpu == True:
+            strategy = tf.distribute.MirroredStrategy()
             with strategy.scope():
                 encoder, decoder, model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
@@ -160,15 +161,16 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def fit(self, CAPTIONS_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8, VOCAB_SIZE=self.VOCAB_SIZE, SPATIAL_SIZE=self.SPATIAL_SIZE, MAX_FRAMES=self.MAX_FRAMES):
-        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or BATCH_SIZE != self.BATCH_SIZE or self.VOCAB_SIZE != VOCAB_SIZE or self.SPATIAL_SIZE != SPATIAL_SIZE or self.MAX_FRAMES != MAX_FRAMES:
+    def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8, VOCAB_SIZE=self.VOCAB_SIZE, SPATIAL_SIZE=self.SPATIAL_SIZE, MAX_FRAMES=self.MAX_FRAMES):
+        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or BATCH_SIZE != self.BATCH_SIZE or self.VOCAB_SIZE != VOCAB_SIZE or self.SPATIAL_SIZE != SPATIAL_SIZE or self.MAX_FRAMES != MAX_FRAMES or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
             self.NUM_CAPTIONS = NUM_CAPTIONS
             self.BATCH_SIZE = BATCH_SIZE
             self.VOCAB_SIZE = VOCAB_SIZE
             self.SPATIAL_SIZE = SPATIAL_SIZE
             self.MAX_FRAMES = MAX_FRAMES
+            self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
-                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, self.BATCH_SIZE)
+                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, self.BATCH_SIZE, VIDEOS_PATH)
         if self.multigpu == True:
             with strategy.scope():
                 cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
