@@ -82,14 +82,14 @@ class MainModel(keras.Model):
         self.acc_tracker.update_state(batch_acc)
         return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
 
-    def play(filename):
+    def play(self, filename):
         html = ''
         video = open(filename,'rb').read()
         src = 'data:video/mp4;base64,' + b64encode(video).decode()
         html += '<video width=500 controls autoplay loop><source src="%s" type="video/mp4"></video>' % src 
         return HTML(html)
     
-    def call(video_path):
+    def call(self, video_path):
         sample_video = video_path
         _, ext = os.path.splitext(sample_video)
         video_name = os.path.splitext(os.path.basename(sample_video))[0]
@@ -103,7 +103,6 @@ class MainModel(keras.Model):
         for i in range(self.max_decoded_sentence_length):
             tokenized_caption = self.vectorization([decoded_caption])[:, :-1]
             mask = tf.math.not_equal(tokenized_caption, 0)
-    
             predictions = self.decoder([tokenized_caption, encoded_frames, mask])
             sampled_token_index = np.argmax(predictions[0, i, :])
             sampled_token = self.index_lookup[sampled_token_index]
@@ -117,11 +116,11 @@ class MainModel(keras.Model):
         os.makedirs(mp4_video, exist_ok=True)
         path_mp4 = mp4_video + "/" + video_name + ".mp4"
         if ext.lower() == '.mp4':
-            display(play(sample_video))
+            display(self.play(sample_video))
         else:
             if not os.path.exists(path_mp4):
                 os.system(f'ffmpeg -i {sample_video} -vcodec libx264 -acodec aac {path_mp4}')
-            display(play(path_mp4))
+            display(self.play(path_mp4))
         print("Predicted Caption: ", decoded_caption)
 
     @property
