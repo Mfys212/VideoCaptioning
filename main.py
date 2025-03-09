@@ -15,10 +15,10 @@ class CreateModel():
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
-        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = None
+        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = self.BATCH_SIZE = None
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
-                 VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS):
+                 VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE):
         captions_mapping, text_data = load_captions_data(CAPTIONS_PATH, SEQ_LENGTH)
         train_data, valid_data = train_val_split(captions_mapping, train_size)
         vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
@@ -28,9 +28,9 @@ class CreateModel():
         valid_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in valid_data.keys()]
         train_dataset = make_dataset_from_frames(train_frame_dirs, list(train_data.values()), 
-                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES)
+                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
         valid_dataset = make_dataset_from_frames(valid_frame_dirs, list(valid_data.values()), 
-                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES)
+                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
         self.train_data = train_dataset
         self.test_data = valid_dataset
 
@@ -155,11 +155,15 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def fit(self, CAPTIONS_PATH, EPOCHS, NUM_CAPTIONS=40, train_size=0.8):
-        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS :
+    def fit(self, CAPTIONS_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8, VOCAB_SIZE=self.VOCAB_SIZE, SPATIAL_SIZE=self.SPATIAL_SIZE, MAX_FRAMES=self.MAX_FRAMES):
+        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or BATCH_SIZE != self.BATCH_SIZE or self.VOCAB_SIZE != VOCAB_SIZE or self.SPATIAL_SIZE != SPATIAL_SIZE or self.MAX_FRAMES != MAX_FRAMES:
             self.NUM_CAPTIONS = NUM_CAPTIONS
+            self.BATCH_SIZE = BATCH_SIZE
+            self.VOCAB_SIZE = VOCAB_SIZE
+            self.SPATIAL_SIZE = SPATIAL_SIZE
+            self.MAX_FRAMES = MAX_FRAMES
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
-                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS)
+                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, self.BATCH_SIZE)
         if self.multigpu == True:
             with strategy.scope():
                 cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
