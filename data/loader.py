@@ -127,7 +127,7 @@ def load_frames_from_directory(directory, size, max_frames):
         frames.append(frame)
 
     if len(frames) < max_frames:
-        padding = [tf.zeros((size[0], size[1], 3), dtype=tf.float32)] * (max_frames - len(frames))
+        padding = [tf.zeros((size, size, 3), dtype=tf.float32)] * (max_frames - len(frames))
         frames.extend(padding)
 
     video_tensor = tf.stack(frames, axis=0)
@@ -153,7 +153,7 @@ def pad_captions(captions, max_captions):
 
     return captions_padded
 
-def make_dataset_from_frames(frame_directories, captions, vectorization, num_captions, IMAGE_SIZE, max_frames, split="train"):
+def make_dataset_from_frames(frame_directories, captions, vectorization, num_captions, IMAGE_SIZE, max_frames, BATCH_SIZE, split="train"):
     frame_dataset = tf.data.Dataset.from_tensor_slices(frame_directories, IMAGE_SIZE, max_frames).map(
         tf_load_frames_from_directory, num_parallel_calls=AUTOTUNE
     )
