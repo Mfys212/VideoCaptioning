@@ -31,7 +31,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         Z = tf.transpose(Z, perm=[0, 2, 1, 3])
         return tf.reshape(Z, [tf.shape(Z)[0], -1, tf.shape(Z)[-1]])
 
-class Encoder(tf.keras.Model):
+class Encoder(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 1, 16, 16)
