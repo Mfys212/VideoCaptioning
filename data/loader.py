@@ -140,7 +140,7 @@ def tf_load_frames_from_directory(directory, IMAGE_SIZE, max_frames):
         Tout=tf.float32
     )
     
-    video_tensor.set_shape((MAX_FRAMES, IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
+    video_tensor.set_shape((max_frames, IMAGE_SIZE, IMAGE_SIZE, 3))
     return video_tensor
 
 def pad_captions(captions, max_captions):
