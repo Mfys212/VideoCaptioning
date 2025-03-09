@@ -17,7 +17,7 @@ AUTOTUNE = tf.data.AUTOTUNE
 exs = (".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".mpeg", ".mpg", ".3gp")
 
 # Load captions data
-def load_captions_data(filename, SEQ_LENGTH):
+def load_captions_data(filename, SEQ_LENGTH, VIDEOS_PATH):
     """Loads captions (text) data and maps them to corresponding videos."""
     with open(filename) as caption_file:
         caption_data = caption_file.readlines()
