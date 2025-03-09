@@ -39,7 +39,7 @@ class CreateModel():
     def DefineModel(self, ENCODER, DECODER, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                     NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         encoder = ENCODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
-                                          num_l=NUM_L, max_frames=MAX_FRAMES)
+                                          num_l=NUM_L, max_frames=MAX_FRAMES, spatial_size=SPATIAL_SIZE)
         encoder.build(input_shape=(None, MAX_FRAMES, *SPATIAL_SIZE, 3))  
         decoder = DECODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
                                 vocab_size=VOCAB_SIZE, seq_length=SEQ_LENGTH, num_l=NUM_L)
