@@ -36,7 +36,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
         self.positional_encoding = self.add_weight(
-            "positional_encoding",
+            name="positional_encoding",
             shape=(1, sequence_length, embed_dim),
             initializer=tf.keras.initializers.RandomNormal(),
             trainable=True
