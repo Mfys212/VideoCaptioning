@@ -15,7 +15,7 @@ class CreateModel():
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
-        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = self.BATCH_SIZE = None
+        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = None
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
                  VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH):
@@ -161,16 +161,12 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8, VOCAB_SIZE=self.VOCAB_SIZE, SPATIAL_SIZE=self.SPATIAL_SIZE, MAX_FRAMES=self.MAX_FRAMES):
-        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or BATCH_SIZE != self.BATCH_SIZE or self.VOCAB_SIZE != VOCAB_SIZE or self.SPATIAL_SIZE != SPATIAL_SIZE or self.MAX_FRAMES != MAX_FRAMES or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
+    def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8):
+        if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
             self.NUM_CAPTIONS = NUM_CAPTIONS
-            self.BATCH_SIZE = BATCH_SIZE
-            self.VOCAB_SIZE = VOCAB_SIZE
-            self.SPATIAL_SIZE = SPATIAL_SIZE
-            self.MAX_FRAMES = MAX_FRAMES
             self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
-                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, self.BATCH_SIZE, VIDEOS_PATH)
+                         self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH)
         if self.multigpu == True:
             with strategy.scope():
                 cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
