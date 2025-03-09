@@ -143,7 +143,7 @@ def tf_load_frames_from_directory(directory, IMAGE_SIZE, max_frames):
     video_tensor.set_shape((MAX_FRAMES, IMAGE_SIZE[0], IMAGE_SIZE[1], 3))
     return video_tensor
 
-def pad_captions(captions, max_captions=NUM_CAPTIONS):
+def pad_captions(captions, max_captions):
     captions_unique = list(set(captions))
 
     if len(captions_unique) > max_captions:
