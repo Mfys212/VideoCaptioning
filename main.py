@@ -42,7 +42,7 @@ class CreateModel():
         decoder = DECODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
                                 vocab_size=VOCAB_SIZE, seq_length=SEQ_LENGTH, num_l=NUM_L)
         decoder.build([(None, None), (None, NUM_PATCH, D_MODELS), (None, None)])
-        model = MainModel(encoder=encoder, decoder=decoder)
+        model = MainModel(encoder=encoder, decoder=decoder, self.NUM_CAPTIONS)
         return encoder, decoder, model
 
     def SpatioTemporalAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
