@@ -123,7 +123,7 @@ def load_frames_from_directory(directory, size, max_frames):
     for frame_file in frame_files[:max_frames]:
         frame = tf.io.read_file(frame_file)
         frame = tf.image.decode_jpeg(frame, channels=3)
-        frame = tf.image.resize(frame, size)
+        frame = tf.image.resize(frame, (size, size))
         frames.append(frame)
 
     if len(frames) < max_frames:
