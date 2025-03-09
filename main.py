@@ -48,7 +48,7 @@ class CreateModel():
         return encoder, decoder, model
 
     def SpatioTemporalAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                               VOCAB_SIZE, SEQ_LENGTH, NUM_L):
+                               VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -62,6 +62,7 @@ class CreateModel():
         self.VOCAB_SIZE = VOCAB_SIZE
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
+        self.NUM_CAPTIONS = NUM_CAPTIONS                           
         trainable_vars = model.trainable_variables
         total_params = 0
         for var in trainable_vars:
@@ -71,7 +72,7 @@ class CreateModel():
         self.model = model
 
     def FactorisedEncoder(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                        VOCAB_SIZE, SEQ_LENGTH, NUM_L):
+                        VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = MAX_FRAMES
         if self.multigpu == True:
             with self.strategy.scope():
@@ -85,6 +86,7 @@ class CreateModel():
         self.VOCAB_SIZE = VOCAB_SIZE
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
+        self.NUM_CAPTIONS = NUM_CAPTIONS                    
         trainable_vars = model.trainable_variables
         total_params = 0
         for var in trainable_vars:
@@ -94,7 +96,7 @@ class CreateModel():
         self.model = model
 
     def FactorisedSelfAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                               VOCAB_SIZE, SEQ_LENGTH, NUM_L):
+                               VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -108,6 +110,7 @@ class CreateModel():
         self.VOCAB_SIZE = VOCAB_SIZE
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
+        self.NUM_CAPTIONS = NUM_CAPTIONS                           
         trainable_vars = model.trainable_variables
         total_params = 0
         for var in trainable_vars:
@@ -117,7 +120,7 @@ class CreateModel():
         self.model = model
 
     def FactorisedDotProductAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                                    VOCAB_SIZE, SEQ_LENGTH, NUM_L):
+                                    VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -131,6 +134,7 @@ class CreateModel():
         self.VOCAB_SIZE = VOCAB_SIZE
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
+        self.NUM_CAPTIONS = NUM_CAPTIONS
         trainable_vars = model.trainable_variables
         total_params = 0
         for var in trainable_vars:
@@ -140,7 +144,7 @@ class CreateModel():
         self.model = model
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                       VOCAB_SIZE, SEQ_LENGTH, NUM_L):
+                       VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((SPATIAL_SIZE/16)**2) + MAX_FRAMES
         if self.multigpu == True:
             with self.strategy.scope():
@@ -154,6 +158,7 @@ class CreateModel():
         self.VOCAB_SIZE = VOCAB_SIZE
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
+        self.NUM_CAPTIONS = NUM_CAPTIONS
         trainable_vars = model.trainable_variables
         total_params = 0
         for var in trainable_vars:
