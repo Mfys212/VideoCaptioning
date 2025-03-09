@@ -188,7 +188,7 @@ class CreateModel():
         return history
 
     def eval(self):
-        evaluation = EvalMetrics(sel.model, self.vectorization, self.SEQ_LENGTH, 
+        evaluation = EvalMetrics(self.model, self.vectorization, self.SEQ_LENGTH, 
                                  self.test_data, self.FRAMES_STORAGE_PATH)
         acc, loss = evaluation.acc_loss()
         cider = evaluation.compute_cider()
