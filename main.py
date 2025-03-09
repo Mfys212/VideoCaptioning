@@ -12,6 +12,8 @@ class CreateModel():
         if seed:
             np.random.seed(212)
             tf.random.set_seed(212)
+        if multigpu == True:
+            self.strategy = tf.distribute.MirroredStrategy()
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
@@ -49,7 +51,7 @@ class CreateModel():
                                VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
-            with strategy.scope():
+            with self.strategy.scope():
                 encoder, decoder, model = self.DefineModel(SpatioTemporalAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
@@ -72,7 +74,7 @@ class CreateModel():
                         VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = MAX_FRAMES
         if self.multigpu == True:
-            with strategy.scope():
+            with self.strategy.scope():
                 encoder, decoder, model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
@@ -95,7 +97,7 @@ class CreateModel():
                                VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
-            with strategy.scope():
+            with self.strategy.scope():
                 encoder, decoder, model = self.DefineModel(FactorisedSelfAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
@@ -118,7 +120,7 @@ class CreateModel():
                                     VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
-            with strategy.scope():
+            with self.strategy.scope():
                 encoder, decoder, model = self.DefineModel(FactorisedDotProductAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
@@ -141,8 +143,7 @@ class CreateModel():
                        VOCAB_SIZE, SEQ_LENGTH, NUM_L):
         NUM_PATCH = int((SPATIAL_SIZE/16)**2) + MAX_FRAMES
         if self.multigpu == True:
-            strategy = tf.distribute.MirroredStrategy()
-            with strategy.scope():
+            with self.strategy.scope():
                 encoder, decoder, model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
@@ -168,7 +169,7 @@ class CreateModel():
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
                          self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH)
         if self.multigpu == True:
-            with strategy.scope():
+            with self.strategy.scope():
                 cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
                 self.model.compile(optimizer=optimizer, loss=cross_entropy)
         else:
