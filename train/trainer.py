@@ -3,7 +3,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 class MainModel(keras.Model):
-    def __init__(self, encoder, decoder, num_captions_per_video=NUM_CAPTIONS):
+    def __init__(self, encoder, decoder, num_captions_per_video):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
