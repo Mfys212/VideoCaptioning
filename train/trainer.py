@@ -77,6 +77,9 @@ class MainModel(keras.Model):
         self.acc_tracker.update_state(batch_acc)
         return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
 
+    def call(self, inputs, training=False):
+        return self.encoder(inputs, training=training)
+
     # def play(self, filename):
     #     html = ''
     #     video = open(filename,'rb').read()
