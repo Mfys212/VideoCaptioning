@@ -162,7 +162,7 @@ def make_dataset_from_frames(frame_directories, captions, vectorization, num_cap
         num_parallel_calls=AUTOTUNE
     )
 
-    captions_padded = list(map(pad_captions, captions, num_captions))
+    captions_padded = [pad_captions(caption, num_captions) for caption in captions]
     cap_dataset = tf.data.Dataset.from_tensor_slices(captions_padded).map(
         vectorization, num_parallel_calls=AUTOTUNE
     )
