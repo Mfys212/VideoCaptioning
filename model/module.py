@@ -18,6 +18,20 @@ class PatchEmbedding(layers.Layer):
         flattened_patches = self.flatten(projected_patches)
         return flattened_patches
 
+class PatchEmbedding2(layers.Layer):
+    def __init__(self, embed_dim, patch_tem, patch_height, patch_width, **kwargs):
+        super().__init__(**kwargs)
+        self.projection = layers.Conv3D(
+            filters=embed_dim,
+            kernel_size=(patch_tem, patch_height, patch_width), 
+            strides=(patch_tem, patch_height, patch_width), 
+            padding="VALID",
+        )
+
+    def call(self, videos):
+        projected_patches = self.projection(videos)
+        return projected_patches
+
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, sequence_length, embed_dim, **kwargs):
         super().__init__(**kwargs)
@@ -31,6 +45,52 @@ class PositionalEncoding(tf.keras.layers.Layer):
     def call(self, inputs):
         length = tf.shape(inputs)[1]
         return self.positional_encoding[:, :length, :]
+
+class DotProductAttention(layers.Layer):
+    def __init__(self, **kwargs):
+        super(DotProductAttention, self).__init__(**kwargs)
+
+    def call(self, queries, keys, values, d_k, mask=None):
+        scores = tf.matmul(queries, keys, transpose_b=True) / tf.math.sqrt(tf.cast(d_k, tf.float32))
+        if mask is not None:
+            scores += -1e9 * mask
+        return tf.matmul(tf.nn.softmax(scores), values)
+
+class MMultiHeadAttention(layers.Layer):
+    def __init__(self, num_heads, key_dim, d_models, dropout=0.1, **kwargs):
+        super(MultiHeadAttention, self).__init__(**kwargs)
+        self.attention = DotProductAttention() 
+        self.num_heads = num_heads 
+        self.d_k = key_dim
+        self.W_q = layers.Dense(key_dim)
+        self.W_k = layers.Dense(key_dim)
+        self.W_k2 = layers.Dense(key_dim)
+        self.W_v = layers.Dense(key_dim)
+        self.W_v2 = layers.Dense(key_dim)
+        self.W_o = layers.Dense(d_models)
+        self.dropout = layers.Dropout(dropout)
+
+    def reshape_tensor(self, x, heads, flag):
+        if flag:
+            x = tf.reshape(x, shape=(tf.shape(x)[0], tf.shape(x)[1], heads, -1))
+            x = tf.transpose(x, perm=(0, 2, 1, 3))
+        else:
+            x = tf.transpose(x, perm=(0, 2, 1, 3))
+            x = tf.reshape(x, shape=(tf.shape(x)[0], tf.shape(x)[1], self.d_k * heads))
+        return x
+
+    def call(self, queries, keys, keys2, values, values2, mask=None, training=True):
+        half_heads = self.num_heads // 2
+        q_reshaped = self.reshape_tensor(self.dropout(self.W_q(queries), training=training), self.num_heads, True)
+        k_reshaped_1 = self.reshape_tensor(self.dropout(self.W_k(keys), training=training), half_heads, True)
+        k_reshaped_2 = self.reshape_tensor(self.dropout(self.W_k2(keys2), training=training), half_heads, True)
+        v_reshaped_1 = self.reshape_tensor(self.dropout(self.W_v(values), training=training), half_heads, True)
+        v_reshaped_2 = self.reshape_tensor(self.dropout(self.W_v2(values2), training=training), half_heads, True)
+        o_reshaped_1 = self.attention(q_reshaped[:, :half_heads], k_reshaped_1, v_reshaped_1, self.d_k, mask)
+        o_reshaped_2 = self.attention(q_reshaped[:, half_heads:], k_reshaped_2, v_reshaped_2, self.d_k, mask)
+        o_reshaped = tf.concat([o_reshaped_1, o_reshaped_2], axis=1)
+        output = self.reshape_tensor(o_reshaped, self.num_heads, False)
+        return self.dropout(self.W_o(output), training=training)
 
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
