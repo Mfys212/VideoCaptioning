@@ -109,41 +109,9 @@ def process_frames(FRAMES_STORAGE_PATH, captions_mapping, IMAGE_SIZE, MAX_FRAMES
     
         with ThreadPoolExecutor(max_workers=cpu_count+2) as executor:
             list(tqdm(executor.map(
-                lambda video_path: save_video_frames(video_path, os.path.join(FRAMES_STORAGE_PATH, os.path.basename(video_path).split('.')[0])),
+                lambda video_path: save_video_frames(video_path, os.path.join(FRAMES_STORAGE_PATH, os.path.basename(video_path).split('.')[0]),  ),
                 video_paths
             ), total=len(video_paths), desc="Saving frames"))
-
-def save_video_frames(video_path, output_dir, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
-    cap = cv2.VideoCapture(video_path)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    os.makedirs(output_dir, exist_ok=True)
-    if total_frames <= max_frames:
-        selected_frames = list(range(total_frames))
-    else:
-        selected_frames = np.linspace(0, total_frames - 1, max_frames, dtype=int)
-    
-    for idx, frame_idx in enumerate(selected_frames):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#         frame = cv2.resize(frame, size)
-        frame_filename = os.path.join(output_dir, f"frame_{idx:04d}.jpg")
-        cv2.imwrite(frame_filename, frame)
-
-    cap.release()
-
-if not os.path.exists(FRAMES_STORAGE_PATH):
-    video_paths = list(captions_mapping.keys())
-
-    with ThreadPoolExecutor(max_workers=cpu_count+2) as executor:
-        list(tqdm(executor.map(
-            lambda video_path: save_video_frames(video_path, os.path.join(FRAMES_STORAGE_PATH, os.path.basename(video_path).split('.')[0])),
-            video_paths
-        ), total=len(video_paths), desc="Saving frames"))
-
 
 def load_frames_from_directory(directory, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
     try:
