@@ -113,7 +113,7 @@ def process_frames(FRAMES_STORAGE_PATH, captions_mapping, IMAGE_SIZE, MAX_FRAMES
                 video_paths
             ), total=len(video_paths), desc="Saving frames"))
 
-def load_frames_from_directory(directory, size=IMAGE_SIZE, max_frames=MAX_FRAMES):
+def load_frames_from_directory(directory, size, max_frames):
     try:
         directory = directory.numpy().decode('utf-8')
     except:
