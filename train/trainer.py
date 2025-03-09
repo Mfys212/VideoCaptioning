@@ -1,15 +1,25 @@
+import os
+import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from IPython.display import HTML, display
+from base64 import b64encode
+from VideoCaptioning.data import *
 
 class MainModel(keras.Model):
-    def __init__(self, encoder, decoder, num_captions_per_video):
+    def __init__(self, encoder, decoder, num_captions_per_video, vectorization, SEQ_LENGTH, FRAMES_STORAGE_PATH):
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.loss_tracker = keras.metrics.Mean(name="loss")
         self.acc_tracker = keras.metrics.Mean(name="accuracy")
         self.num_captions_per_video = num_captions_per_video
+        self.vectorization = vectorization
+        vocab = vectorization.get_vocabulary()
+        self.index_lookup = dict(zip(range(len(vocab)), vocab))
+        self.max_decoded_sentence_length = SEQ_LENGTH - 1
+        self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
 
     def calculate_loss(self, y_true, y_pred, mask):
         loss = self.loss(y_true, y_pred)
@@ -71,6 +81,48 @@ class MainModel(keras.Model):
         self.loss_tracker.update_state(batch_loss)
         self.acc_tracker.update_state(batch_acc)
         return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
+
+    def play(filename):
+        html = ''
+        video = open(filename,'rb').read()
+        src = 'data:video/mp4;base64,' + b64encode(video).decode()
+        html += '<video width=500 controls autoplay loop><source src="%s" type="video/mp4"></video>' % src 
+        return HTML(html)
+    
+    def call(video_path):
+        sample_video = video_path
+        _, ext = os.path.splitext(sample_video)
+        video_name = os.path.splitext(os.path.basename(sample_video))[0]
+        video_storage_path = os.path.join(self.FRAMES_STORAGE_PATH, video_name)
+        if not os.path.exists(video_storage_path) or len(os.listdir(video_storage_path)) == 0:
+            save_video_frames(sample_video, video_storage_path)
+        video_frames = tf_load_frames_from_directory(video_storage_path)
+        video_frames = tf.expand_dims(video_frames, axis=0) 
+        encoded_frames = self.encoder(video_frames)
+        decoded_caption = "<start>"
+        for i in range(self.max_decoded_sentence_length):
+            tokenized_caption = self.vectorization([decoded_caption])[:, :-1]
+            mask = tf.math.not_equal(tokenized_caption, 0)
+    
+            predictions = self.decoder([tokenized_caption, encoded_frames, mask])
+            sampled_token_index = np.argmax(predictions[0, i, :])
+            sampled_token = self.index_lookup[sampled_token_index]
+            if sampled_token == "<end>":
+                break
+            decoded_caption += " " + sampled_token
+
+        decoded_caption = decoded_caption.replace("<start> ", "")
+        decoded_caption = decoded_caption.replace(" <end>", "").strip()
+        mp4_video = "/kaggle/working/outputmp4"
+        os.makedirs(mp4_video, exist_ok=True)
+        path_mp4 = mp4_video + "/" + video_name + ".mp4"
+        if ext.lower() == '.mp4':
+            display(play(sample_video))
+        else:
+            if not os.path.exists(path_mp4):
+                os.system(f'ffmpeg -i {sample_video} -vcodec libx264 -acodec aac {path_mp4}')
+            display(play(path_mp4))
+        print("Predicted Caption: ", decoded_caption)
 
     @property
     def metrics(self):
