@@ -154,8 +154,12 @@ def pad_captions(captions, max_captions):
     return captions_padded
 
 def make_dataset_from_frames(frame_directories, captions, vectorization, num_captions, IMAGE_SIZE, max_frames, BATCH_SIZE, split="train"):
-    frame_dataset = tf.data.Dataset.from_tensor_slices(frame_directories, IMAGE_SIZE, max_frames).map(
-        tf_load_frames_from_directory, num_parallel_calls=AUTOTUNE
+    # frame_dataset = tf.data.Dataset.from_tensor_slices(frame_directories, IMAGE_SIZE, max_frames).map(
+    #     tf_load_frames_from_directory, num_parallel_calls=AUTOTUNE
+    # )
+    frame_dataset = tf.data.Dataset.from_tensor_slices(frame_directories).map(
+        lambda directory: tf_load_frames_from_directory(directory, IMAGE_SIZE, max_frames),
+        num_parallel_calls=AUTOTUNE
     )
 
     captions_padded = list(map(pad_captions, captions, num_captions))
