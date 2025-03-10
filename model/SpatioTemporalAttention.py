@@ -32,5 +32,5 @@ class Encoder(tf.keras.layers.Layer):
         Z = self.patch_embedding(inputs)
         Z = layers.Add()([Z, self.positional_encoding(Z)])
         for block in self.blocks:
-            Z = block(Z, mask, training)
+            Z = block(Z, mask=mask, training=training)
         return Z
