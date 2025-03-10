@@ -27,7 +27,7 @@ class Encoder(tf.keras.layers.Layer):
         num_patch = int((spatial_size/16)**2)
         self.Spositional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.Tpositional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
-        self.blocks_spatial = [[EncoderBlock(d_models, num_heads) for _ in range(num_l)] for _ in range(max_frames)]
+        self.blocks_spatial = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.blocks_temporal = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.max_frames = max_frames
 
@@ -36,9 +36,9 @@ class Encoder(tf.keras.layers.Layer):
         Z = [self.patch_embedding(z) for z in Z]
         Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
         Z_new = []
-        for i in range(len(Z)):
-            for block in self.blocks_spatial[i]:
-                z = block(Z[i], mask=mask, training=training)
+        for z in Z:
+            for block in self.blocks_spatial:
+                z = block(z, mask=mask, training=training)
             Z_new.append(z)
         Z = tf.stack(Z_new, axis=0)
         Z = tf.reduce_mean(Z, axis=0)
