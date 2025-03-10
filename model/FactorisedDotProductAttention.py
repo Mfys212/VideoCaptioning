@@ -34,6 +34,7 @@ class Encoder(tf.keras.layers.Layer):
         self.flatten = layers.Reshape(target_shape=(-1, d_models))
 
     def call(self, inputs, training=True, mask=None):
+        inputs = self.patch_embedding(inputs)
         Z = self.flatten(inputs)
         Z = layers.Add()([Z, self.positional_encoding(Z)])
         inputs = tf.reshape(Z, tf.shape(inputs))
