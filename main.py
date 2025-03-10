@@ -14,7 +14,7 @@ class CreateModel():
             tf.random.set_seed(212)
         if multigpu == True:
             self.strategy = tf.distribute.MirroredStrategy()
-        self.model = self.train_data = self.test_data = None
+        self.model = self.train_data = self.test_data = self.test = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
         self.FRAMES_STORAGE_PATH = self.vectorization = None
@@ -37,6 +37,7 @@ class CreateModel():
                                                  vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
         self.train_data = train_dataset
         self.test_data = valid_dataset
+        self.test = valid_data
 
     def DefineModel(self, ENCODER, DECODER, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                     NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
@@ -191,7 +192,7 @@ class CreateModel():
 
     def eval(self):
         evaluation = EvalMetrics(self.model, self.vectorization, self.SEQ_LENGTH, 
-                                 self.test_data, self.FRAMES_STORAGE_PATH)
+                                 self.test_data, self.test, self.FRAMES_STORAGE_PATH)
         acc, loss = evaluation.acc_loss()
         cider = evaluation.compute_cider()
         return acc, loss, cider
