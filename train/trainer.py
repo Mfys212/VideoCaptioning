@@ -53,7 +53,8 @@ class MainModel(keras.Model):
 
     def train_step(self, batch_data):
         batch_video, batch_seq = batch_data
-        batch_loss = batch_acc = 0
+        batch_loss = 0
+        batch_acc = 0
         with tf.GradientTape() as tape:
             encoder_out = self.encoder(batch_video, training=True)
             batch_loss, batch_acc = self._compute_loss_and_acc_for_captions(encoder_out, 
