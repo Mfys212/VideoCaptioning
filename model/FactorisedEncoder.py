@@ -35,11 +35,12 @@ class Encoder(tf.keras.layers.Layer):
         Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
         Z = [self.patch_embedding(z) for z in Z]
         Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
-        for i in range(len(Z)):
+        Z_new = []
+        for z in Z:
             for block in self.blocks_spatial:
-                z = block(Z[i], mask=mask, training=training)
-            Z[i] = z
-        Z = tf.stack(Z, axis=0)
+                z = block(z, mask=mask, training=training)
+            Z_new.append(z)
+        Z = tf.stack(Z_new, axis=0)
         Z = tf.reduce_mean(Z, axis=0)
         Z = layers.Add()([Z, self.Tpositional_encoding(Z)])
         for block in self.blocks_temporal:
