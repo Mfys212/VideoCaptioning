@@ -14,7 +14,8 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
 
-    def call(self, Zt, Zs, mask=None, training=True):
+    def call(self, inputs, mask=None, training=True):
+        Zt, Zs = inputs
         Zts = tf.concat([Zs, Zt], axis=1)
         attention1 = self.attention1(query=Zt, value=Zts, key=Zts, attention_mask=mask, training=training)
         Zt = self.layernorm[0](layers.Add()([Zt, attention1]))
@@ -47,7 +48,7 @@ class Encoder(tf.keras.layers.Layer):
         spa = self.patch_embedding(inputs)
         Zs = layers.Add()([spa, self.s_positional_encoding(spa)])
         for block in self.blocks:
-            Zt, Zs = block(Zt, Zs, mask, training)
+            Zt, Zs = block([Zt, Zs], mask=mask, training=training)
         out = tf.concat([Zs, Zt], axis=1)
         out = self.out(out)
         return out
