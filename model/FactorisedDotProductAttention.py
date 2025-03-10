@@ -8,7 +8,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         d = d_models // num_heads
         self.attention = MMultiHeadAttention(num_heads=num_heads, key_dim=d, d_models=d_models)
-        self.layernorm = [layers.Normalization() for _ in range(2)]
+        self.layernorm = [layers.LayerNormalization() for _ in range(2)]
         self.dense = layers.Dense(d_models, activation="gelu")
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
