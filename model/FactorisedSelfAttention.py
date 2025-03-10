@@ -48,7 +48,7 @@ class Encoder(tf.keras.Model):
         Z = [self.patch_embedding(z) for z in Z]
         Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
         for block in self.blocks:
-            Z = block(Z, training, mask)
+            Z = block(Z, mask=mask, training=training)
             Z = tf.split(Z, num_or_size_splits=self.max_frames, axis=1)
         Z = tf.reshape(tf.concat(Z, axis=2), (tf.shape(inputs)[0], self.max_frames * self.spa_num_patch, self.d_models))
         return Z
