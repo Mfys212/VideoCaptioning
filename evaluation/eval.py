@@ -6,7 +6,7 @@ from tqdm import tqdm
 from pycocoevalcap.cider.cider import Cider
 
 class EvalMetrics():
-    def __init__(self, model, vectorization, SEQ_LENGTH, valid_data, FRAMES_STORAGE_PATH):
+    def __init__(self, model, vectorization, SEQ_LENGTH, valid_dataset, valid_data, FRAMES_STORAGE_PATH):
         self.model = model
         self.vectorization = vectorization
         self.vocab = vectorization.get_vocabulary()
@@ -46,7 +46,7 @@ class EvalMetrics():
         return decoded_caption
 
     def acc_loss():
-        acc, loss = self.model.evaluate(self.valid_data, verbose=0)
+        acc, loss = self.model.evaluate(self.valid_dataset, verbose=0)
         return acc, loss
 
     def compute_cider():
