@@ -17,7 +17,7 @@ class CreateModel():
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
-        self.FRAMES_STORAGE_PATH = None
+        self.FRAMES_STORAGE_PATH = self.vectorization = None
         self.NUM_CAPTIONS = 40
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
@@ -25,6 +25,7 @@ class CreateModel():
         captions_mapping, text_data = load_captions_data(CAPTIONS_PATH, SEQ_LENGTH, VIDEOS_PATH)
         train_data, valid_data = train_val_split(captions_mapping, train_size)
         vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
+        self.vectorization = vectorization
         process_frames(FRAMES_STORAGE_PATH, captions_mapping, SPATIAL_SIZE, MAX_FRAMES)
         train_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in train_data.keys()]
