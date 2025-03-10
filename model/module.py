@@ -60,7 +60,7 @@ class DotProductAttention(layers.Layer):
 
 class MMultiHeadAttention(layers.Layer):
     def __init__(self, num_heads, key_dim, d_models, dropout=0.1, **kwargs):
-        super(MultiHeadAttention, self).__init__(**kwargs)
+        super(MMultiHeadAttention, self).__init__(**kwargs)
         self.attention = DotProductAttention() 
         self.num_heads = num_heads 
         self.d_k = key_dim
