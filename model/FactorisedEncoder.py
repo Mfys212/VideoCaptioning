@@ -39,9 +39,9 @@ class Encoder(tf.keras.layers.Layer):
         for z in Z:
             for block in self.blocks_spatial:
                 z = block(z, mask=mask, training=training)
+            z = tf.reduce_mean(z, axis=1)
             Z_new.append(z)
-        Z = tf.stack(Z_new, axis=0)
-        Z = tf.reduce_mean(Z, axis=0)
+        Z = tf.stack(Z_new, axis=1)
         Z = layers.Add()([Z, self.Tpositional_encoding(Z)])
         for block in self.blocks_temporal:
             Z = block(Z, mask=mask, training=training)
