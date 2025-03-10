@@ -9,7 +9,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         d = d_models // num_heads
         self.attention1 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=d, dropout=0.1)
         self.attention2 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=d, dropout=0.1)
-        self.layernorm = [layers.LayerNormalization(epsilon=1e-6) for _ in range(3)]
+        self.layernorm = [layers.LayerNormalization() for _ in range(3)]
         self.dense = layers.Dense(d_models, activation="gelu")
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
