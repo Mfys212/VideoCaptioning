@@ -77,8 +77,16 @@ class MainModel(keras.Model):
         self.acc_tracker.update_state(batch_acc)
         return {"seq_loss": self.loss_tracker.result(), "seq_acc": self.acc_tracker.result()}
 
-    def call(self, inputs, training=False):
-        return self.encoder(inputs, training=training)
+    # def call(self, inputs, training=False):
+    #     batch_video, batch_seq = inputs
+    #     batch_seq_inp = batch_seq[:, :-1]
+    #     batch_seq_true = batch_seq[:, 1:]
+    #     mask = tf.math.not_equal(batch_seq_true, 0)
+    #     encoder_out = self.encoder(batch_video, training=training)
+    #     batch_seq_pred = self.decoder(
+    #         [batch_seq_inp, encoder_out, mask], training=training
+    #     )
+    #     return batch_seq_pred
 
     # def play(self, filename):
     #     html = ''
