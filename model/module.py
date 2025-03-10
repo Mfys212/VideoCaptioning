@@ -122,7 +122,7 @@ class Decoder(tf.keras.layers.Layer):
         )
         self.layernorm = layers.LayerNormalization()
         self.attention = [TransformerBlock(d_models, num_heads) for _ in range(num_l)]
-        self.linear = layers.Dense(d_models,)
+        self.linear = layers.Dense(d_models)
         self.out = layers.Dense(vocab_size)
     
     def call(self, inp, training=True):
