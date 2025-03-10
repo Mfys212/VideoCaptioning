@@ -45,11 +45,11 @@ class EvalMetrics():
         decoded_caption = decoded_caption.replace(" <end>", "").strip()
         return decoded_caption
 
-    def acc_loss():
+    def acc_loss(self):
         acc, loss = self.model.evaluate(self.valid_dataset, verbose=0)
         return acc, loss
 
-    def compute_cider():
+    def compute_cider(self):
         references, hypotheses, val = {}, {}, {}
         val = {
             key: [text.replace("<start> ", "").replace(" <end>", "") for text in value]
