@@ -37,14 +37,16 @@ class PositionalEncoding(tf.keras.layers.Layer):
         super().__init__(**kwargs)
         self.positional_encoding = self.add_weight(
             name="positional_encoding",
-            shape=(1, sequence_length, embed_dim),
+            shape=(sequence_length, embed_dim), 
             initializer=tf.keras.initializers.RandomNormal(),
             trainable=True
         )
-    
+
     def call(self, inputs):
-        length = tf.shape(inputs)[1]
-        return self.positional_encoding[:, :length, :]
+        batch_size = tf.shape(inputs)[0] 
+        length = tf.shape(inputs)[1]  
+        pos_encoding = tf.expand_dims(self.positional_encoding[:length, :], axis=0)  
+        return tf.tile(pos_encoding, [batch_size, 1, 1])  
 
 class DotProductAttention(layers.Layer):
     def __init__(self, **kwargs):
