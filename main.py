@@ -17,7 +17,8 @@ class CreateModel():
         self.model = self.train_data = self.test_data = None
         self.multigpu = multigpu
         self.D_MODELS = self.SEQ_LENGTH = self.VOCAB_SIZE = self.SPATIAL_SIZE = self.MAX_FRAMES = None
-        self.FRAMES_STORAGE_PATH = self.NUM_CAPTIONS = None
+        self.FRAMES_STORAGE_PATH = None
+        self.NUM_CAPTIONS = 40
 
     def LoadData(self, CAPTIONS_PATH, FRAMES_STORAGE_PATH, train_size, SEQ_LENGTH, 
                  VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH):
