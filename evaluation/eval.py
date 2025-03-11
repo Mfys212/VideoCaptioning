@@ -15,6 +15,7 @@ class EvalMetrics():
         self.valid_videos = list(valid_data.keys())
         self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
         self.valid_data = valid_data
+        self.valid_dataset = valid_dataset
 
     def generate_caption(self, video_path):
         if video_path is None:
