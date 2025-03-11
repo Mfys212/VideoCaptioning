@@ -9,7 +9,7 @@ except:
     pass
     
 class EncoderBlock(tf.keras.layers.Layer):
-    def __init__(self, d_models, num_heads, max_frames, num_p_spa **kwargs):
+    def __init__(self, d_models, num_heads, max_frames, num_p_spa, **kwargs):
         super().__init__(**kwargs)
         d = d_models // num_heads
         self.attention = MMultiHeadAttention(num_heads=num_heads, key_dim=d, d_models=d_models, nt=max_frames, nh_nw=num_p_spa)
