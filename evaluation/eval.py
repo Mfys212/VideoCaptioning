@@ -7,7 +7,7 @@ from pycocoevalcap.cider.cider import Cider
 from VideoCaptioning.data import *
 
 class EvalMetrics():
-    def __init__(self, model, vectorization, SEQ_LENGTH, valid_dataset, valid_data, FRAMES_STORAGE_PATH):
+    def __init__(self, model, vectorization, SEQ_LENGTH, valid_dataset, valid_data, FRAMES_STORAGE_PATH, SPATIAL_SIZE=224, max_frames=20):
         self.model = model
         self.vectorization = vectorization
         self.vocab = vectorization.get_vocabulary()
@@ -17,6 +17,8 @@ class EvalMetrics():
         self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
         self.valid_data = valid_data
         self.valid_dataset = valid_dataset
+        self.size = SPATIAL_SIZE
+        self.max_frames = max_frames
 
     def generate_caption(self, video_path):
         if video_path is None:
@@ -28,7 +30,7 @@ class EvalMetrics():
         video_storage_path = os.path.join(self.FRAMES_STORAGE_PATH, video_name)
         if not os.path.exists(video_storage_path) or len(os.listdir(video_storage_path)) == 0:
             save_video_frames(sample_video, video_storage_path)
-        video_frames = tf_load_frames_from_directory(video_storage_path)
+        video_frames = tf_load_frames_from_directory(video_storage_path, self.size, self.max_frames)
         video_frames = tf.expand_dims(video_frames, axis=0) 
         encoded_frames = self.model.encoder(video_frames)
         decoded_caption = "<start>"
