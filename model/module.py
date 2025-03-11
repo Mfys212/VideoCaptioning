@@ -94,13 +94,13 @@ class MMultiHeadAttention(layers.Layer):
         
         k = self.W_k(keys) 
         k = tf.reshape(k, (batch_size, self.nt, self.nh_nw, self.d_model))
-        k1 = tf.reduce_mean(tensor_reshaped, axis=2)
-        k2 = tf.reduce_mean(tensor_reshaped, axis=1)
+        k1 = tf.reduce_mean(k, axis=2)
+        k2 = tf.reduce_mean(k, axis=1)
 
         v = self.W_v(values) 
         v = tf.reshape(v, (batch_size, self.nt, self.nh_nw, self.d_model))
-        v1 = tf.reduce_mean(tensor_reshaped, axis=2)
-        v2 = tf.reduce_mean(tensor_reshaped, axis=1)
+        v1 = tf.reduce_mean(v, axis=2)
+        v2 = tf.reduce_mean(v, axis=1)
         
         q_heads = self.reshape_tensor(q, self.num_heads)  
         k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
