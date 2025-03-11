@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 from pycocoevalcap.cider.cider import Cider
+from VideoCaptioning.data import *
 
 class EvalMetrics():
     def __init__(self, model, vectorization, SEQ_LENGTH, valid_dataset, valid_data, FRAMES_STORAGE_PATH):
