@@ -111,7 +111,7 @@ class TransformerBlock(tf.keras.layers.Layer):
         out = self.layernorm_2(layers.Add()([inputs, out_1]))
         return out
 
-class Decoder(tf.keras.layers.Layer):
+class Decoder(tf.keras.Model):
     def __init__(self, d_models, num_heads, vocab_size, seq_length, num_l, **kwargs):
         super().__init__(**kwargs)
         self.token_embeddings = layers.Embedding(input_dim=vocab_size, output_dim=d_models)
