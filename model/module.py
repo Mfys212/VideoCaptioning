@@ -57,47 +57,55 @@ class DotProductAttention(layers.Layer):
     def __init__(self, **kwargs):
         super(DotProductAttention, self).__init__(**kwargs)
 
-    def call(self, queries, keys, values, d_k, mask=None):
-        scores = tf.matmul(queries, keys, transpose_b=True) / tf.math.sqrt(tf.cast(d_k, tf.float32))
+    def call(self, queries, keys, values, mask=None):
+        d_k = tf.cast(tf.shape(keys)[-1], tf.float32) 
+        scores = tf.matmul(queries, keys, transpose_b=True) / tf.math.sqrt(d_k)
         if mask is not None:
             scores += -1e9 * mask
-        return tf.matmul(tf.nn.softmax(scores), values)
+        attention_weights = tf.nn.softmax(scores, axis=-1)
+        return tf.matmul(attention_weights, values)
 
 class MMultiHeadAttention(layers.Layer):
-    def __init__(self, num_heads, key_dim, d_models, dropout=0.1, **kwargs):
+    def __init__(self, num_heads, key_dim, d_model, dropout=0.1, **kwargs):
         super(MMultiHeadAttention, self).__init__(**kwargs)
-        self.attention = DotProductAttention() 
-        self.num_heads = num_heads 
-        self.d_k = key_dim
-        self.W_q = layers.Dense(key_dim)
-        self.W_k = layers.Dense(key_dim)
-        self.W_k2 = layers.Dense(key_dim)
-        self.W_v = layers.Dense(key_dim)
-        self.W_v2 = layers.Dense(key_dim)
-        self.W_o = layers.Dense(d_models)
+        assert num_heads % 2 == 0, "num_heads must be even for division into two parts"
+        self.num_heads = num_heads
+        self.half_heads = num_heads // 2
+        self.key_dim = key_dim
+        self.d_model = d_model
+        self.attention = DotProductAttention()
+        self.W_q = layers.Dense(d_model)  
+        self.W_k1 = layers.Dense(d_model)  
+        self.W_k2 = layers.Dense(d_model)  
+        self.W_v1 = layers.Dense(d_model)  
+        self.W_v2 = layers.Dense(d_model) 
+        self.W_o = layers.Dense(d_model)  
         self.dropout = layers.Dropout(dropout)
 
-    def reshape_tensor(self, x, heads, flag):
-        if flag:
-            x = tf.reshape(x, shape=(tf.shape(x)[0], tf.shape(x)[1], heads, -1))
-            x = tf.transpose(x, perm=(0, 2, 1, 3))
-        else:
-            x = tf.transpose(x, perm=(0, 2, 1, 3))
-            x = tf.reshape(x, shape=(tf.shape(x)[0], tf.shape(x)[1], self.d_k * heads))
-        return x
+    def reshape_tensor(self, x, heads):
+        batch_size = tf.shape(x)[0]
+        seq_len = tf.shape(x)[1]
+        x = tf.reshape(x, (batch_size, seq_len, heads, self.key_dim))
+        return tf.transpose(x, perm=[0, 2, 1, 3])
 
-    def call(self, queries, keys, keys2, values, values2, mask=None, training=True):
-        half_heads = self.num_heads // 2
-        q_reshaped = self.reshape_tensor(self.dropout(self.W_q(queries), training=training), self.num_heads, True)
-        k_reshaped_1 = self.reshape_tensor(self.dropout(self.W_k(keys), training=training), half_heads, True)
-        k_reshaped_2 = self.reshape_tensor(self.dropout(self.W_k2(keys2), training=training), half_heads, True)
-        v_reshaped_1 = self.reshape_tensor(self.dropout(self.W_v(values), training=training), half_heads, True)
-        v_reshaped_2 = self.reshape_tensor(self.dropout(self.W_v2(values2), training=training), half_heads, True)
-        o_reshaped_1 = self.attention(q_reshaped, k_reshaped_1, v_reshaped_1, self.d_k, mask)
-        o_reshaped_2 = self.attention(q_reshaped, k_reshaped_2, v_reshaped_2, self.d_k, mask)
-        o_reshaped = tf.concat([o_reshaped_1, o_reshaped_2], axis=1)
-        output = self.reshape_tensor(o_reshaped, self.num_heads, False)
-        return self.dropout(self.W_o(output), training=training)
+    def call(self, queries, keys1, keys2, values1, values2, mask=None, training=True):
+        batch_size = tf.shape(queries)[0]
+        q = self.W_q(queries)
+        k1 = self.W_k1(keys1)
+        k2 = self.W_k2(keys2)
+        v1 = self.W_v1(values1)
+        v2 = self.W_v2(values2)
+        q_heads = self.reshape_tensor(q, self.num_heads)  
+        k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
+        k_heads_2 = self.reshape_tensor(k2, self.half_heads)  
+        v_heads_1 = self.reshape_tensor(v1, self.half_heads)  
+        v_heads_2 = self.reshape_tensor(v2, self.half_heads)  
+        attn_out_1 = self.attention(q_heads[:, :self.half_heads], k_heads_1, v_heads_1, mask)
+        attn_out_2 = self.attention(q_heads[:, self.half_heads:], k_heads_2, v_heads_2, mask)
+        attn_output = tf.concat([attn_out_1, attn_out_2], axis=1)
+        attn_output = tf.transpose(attn_output, perm=[0, 2, 1, 3]) 
+        attn_output = tf.reshape(attn_output, (batch_size, -1, self.d_model))
+        return self.dropout(self.W_o(attn_output), training=training)
 
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
