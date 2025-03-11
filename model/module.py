@@ -75,10 +75,10 @@ class MMultiHeadAttention(layers.Layer):
         self.d_model = d_models
         self.attention = DotProductAttention()
         self.W_q = layers.Dense(d_models)  
-        self.W_k1 = layers.Dense(d_models)  
-        self.W_k2 = layers.Dense(d_models)  
-        self.W_v1 = layers.Dense(d_models)  
-        self.W_v2 = layers.Dense(d_models) 
+        self.W_k1 = layers.Dense(d_models//2)  
+        self.W_k2 = layers.Dense(d_models//2)  
+        self.W_v1 = layers.Dense(d_models//2)  
+        self.W_v2 = layers.Dense(d_models//2) 
         self.W_o = layers.Dense(d_models)  
         self.dropout = layers.Dropout(dropout)
 
