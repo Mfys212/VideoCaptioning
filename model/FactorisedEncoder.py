@@ -33,13 +33,15 @@ class Encoder(tf.keras.models.Model):
 
     def call(self, inputs, training=True, mask=None):
         Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
-        Z = tf.map_fn(self.patch_embedding, Z, dtype=tf.float32)
-        Z = tf.map_fn(lambda z: layers.Add()([z, self.Spositional_encoding(z)]), Z, dtype=tf.float32)
-        def apply_blocks(z):
+        Z = [self.patch_embedding(z) for z in Z]
+        Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
+        Z_new = []
+        for z in Z:
             for block in self.blocks_spatial:
                 z = block(z, mask=mask, training=training)
-            return tf.reduce_mean(z, axis=1)
-        Z = tf.map_fn(apply_blocks, Z, dtype=tf.float32)
+            z = tf.reduce_mean(z, axis=1)
+            Z_new.append(z)
+        Z = tf.stack(Z_new, axis=1)
         Z = layers.Add()([Z, self.Tpositional_encoding(Z)])
         for block in self.blocks_temporal:
             Z = block(Z, mask=mask, training=training)
