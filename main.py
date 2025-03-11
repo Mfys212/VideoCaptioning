@@ -9,9 +9,13 @@ from VideoCaptioning.train import *
 class CreateModel():
     def __init__(self, seed=False, multigpu=False):
         super().__init__()
-        if seed:
-            np.random.seed(212)
-            tf.random.set_seed(212)
+        if seed == True:
+            global set_seed
+            def set_seed():
+                import numpy as np
+                import tensorflow as tf
+                np.random.seed(212)
+                tf.random.set_seed(212)
         if multigpu == True:
             self.strategy = tf.distribute.MirroredStrategy()
         self.model = self.train_data = self.test_data = self.test = None
