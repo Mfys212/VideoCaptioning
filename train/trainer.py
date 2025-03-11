@@ -34,7 +34,7 @@ class MainModel(keras.Model):
         batch_seq_true = batch_seq[:, 1:]
         mask = tf.math.not_equal(batch_seq_true, 0)
         batch_seq_pred = self.decoder(
-            [batch_seq_inp, encoder_out, mask], training=training
+            (batch_seq_inp, encoder_out, mask), training=training
         )
         loss = self.calculate_loss(batch_seq_true, batch_seq_pred, mask)
         acc = self.calculate_accuracy(batch_seq_true, batch_seq_pred, mask)
