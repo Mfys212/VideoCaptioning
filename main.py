@@ -192,7 +192,7 @@ class CreateModel():
 
     def eval(self):
         evaluation = EvalMetrics(self.model, self.vectorization, self.SEQ_LENGTH, 
-                                 self.test_data, self.test, self.FRAMES_STORAGE_PATH)
+                                 self.test_data, self.test, self.FRAMES_STORAGE_PATH, SPATIAL_SIZE=self.SPATIAL_SIZE, max_frames=self.MAX_FRAMES)
         acc, loss = evaluation.acc_loss()
         cider = evaluation.compute_cider()
         return acc, loss, cider
