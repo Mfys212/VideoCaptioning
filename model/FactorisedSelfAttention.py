@@ -16,20 +16,21 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.num_patch = num_patch
 
     def call(self, Z, mask=None, training=True):
-        def apply_attention1(z):
+        Z_new = []
+        for z in Z:
             z_norm = self.layernorm[0](z)
             attention = self.attention1(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
-            return layers.Add()([z, attention])
-        Z = tf.map_fn(apply_attention1, Z, dtype=tf.float32)
+            Z_new.append(layers.Add()([z, attention]))
+        Z = tf.stack(Z_new, axis=1)
         Z_split = tf.split(Z, num_or_size_splits=self.num_patch, axis=2)
-        def apply_attention2_ffn(z):
+        Z_new = []
+        for z in Z_split:
             z_norm = self.layernorm[1](z)
             attention = self.attention2(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
             z = layers.Add()([z, attention])
             ffn = self.densel(self.dropout(self.dense(self.layernorm[2](z)), training=training))
-            return layers.Add()([z, ffn])
-        Z = tf.map_fn(apply_attention2_ffn, tf.stack(Z_split, axis=0), dtype=tf.float32)
-        Z = tf.concat(tf.unstack(Z, axis=0), axis=1)
+            Z_new.append(layers.Add()([z, ffn]))
+        Z = tf.concat(Z_new, axis=1)
         return Z
 
 class Encoder(tf.keras.models.Model):
@@ -44,8 +45,8 @@ class Encoder(tf.keras.models.Model):
 
     def call(self, inputs, training=True, mask=None):
         Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
-        Z = tf.map_fn(self.patch_embedding, Z, dtype=tf.float32)
-        Z = tf.map_fn(lambda z: layers.Add()([z, self.Spositional_encoding(z)]), Z, dtype=tf.float32)
+        Z = [self.patch_embedding(z) for z in Z]
+        Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
         for block in self.blocks:
             Z = block(Z, mask=mask, training=training)
             Z = tf.split(Z, num_or_size_splits=self.max_frames, axis=1)
