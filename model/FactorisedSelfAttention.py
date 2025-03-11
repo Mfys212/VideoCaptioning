@@ -33,7 +33,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         Z = tf.concat(Z_new, axis=1)
         return Z
 
-class Encoder(tf.keras.Model):
+class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 1, 16, 16)
