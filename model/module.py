@@ -82,35 +82,27 @@ class MMultiHeadAttention(layers.Layer):
         self.nt = nt
         self.nh_nw = nh_nw
 
-    def reshape_tensor(self, x, heads):
-        batch_size = tf.shape(x)[0]
-        seq_len = tf.shape(x)[1]
-        x = tf.reshape(x, (batch_size, seq_len, heads, self.key_dim))
-        return tf.transpose(x, perm=[0, 2, 1, 3])
+    # def reshape_tensor(self, x, heads):
+    #     batch_size = tf.shape(x)[0]
+    #     seq_len = tf.shape(x)[1]
+    #     x = tf.reshape(x, (batch_size, seq_len, heads, self.key_dim))
+    #     return tf.transpose(x, perm=[0, 2, 1, 3])
 
     def call(self, query, keys, values, mask=None, training=True):
         batch_size = tf.shape(query)[0]
         q = self.W_q(query)
         k = self.W_k(keys) 
         v = self.W_v(values) 
-        k1, k2 = tf.split(k, num_or_size_splits=2, axis=-1) 
-        v1, v2 = tf.split(v, num_or_size_splits=2, axis=-1)
+        k1 = tf.reduce_mean(k[..., :self.d_model//2], axis=2)  
+        k2 = tf.reduce_mean(k[..., self.d_model//2:], axis=1) 
+        v1 = tf.reduce_mean(v[..., :self.d_model//2], axis=2)  
+        v2 = tf.reduce_mean(v[..., self.d_model//2:], axis=1)
         
-        k1 = tf.reshape(k1, (batch_size, self.nt, self.nh_nw, self.d_model//2))
-        k1 = tf.reduce_mean(k1, axis=2)
-        k2 = tf.reshape(k2, (batch_size, self.nt, self.nh_nw, self.d_model//2))
-        k2 = tf.reduce_mean(k2, axis=1)
-
-        v1 = tf.reshape(v1, (batch_size, self.nt, self.nh_nw, self.d_model//2))
-        v1 = tf.reduce_mean(v1, axis=2)
-        v2 = tf.reshape(v2, (batch_size, self.nt, self.nh_nw, self.d_model//2))
-        v2 = tf.reduce_mean(v2, axis=1)
-        
-        q_heads = self.reshape_tensor(q, self.num_heads)  
-        k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
-        k_heads_2 = self.reshape_tensor(k2, self.half_heads)  
-        v_heads_1 = self.reshape_tensor(v1, self.half_heads)  
-        v_heads_2 = self.reshape_tensor(v2, self.half_heads)  
+        q_heads = tf.reshape(q, (batch_size, self.num_heads, -1, self.key_dim))  
+        k_heads_1 = tf.reshape(k1, (batch_size, self.half_heads, -1, self.key_dim))  
+        k_heads_2 = tf.reshape(k2, (batch_size, self.half_heads, -1, self.key_dim))  
+        v_heads_1 = tf.reshape(v1, (batch_size, self.half_heads, -1, self.key_dim))  
+        v_heads_2 = tf.reshape(v2, (batch_size, self.half_heads, -1, self.key_dim)) 
         q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=1)
         attn_out_1 = self.attention(q_heads_1, k_heads_1, v_heads_1, mask)
         attn_out_2 = self.attention(q_heads_2, k_heads_2, v_heads_2, mask)
