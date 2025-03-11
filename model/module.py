@@ -66,7 +66,7 @@ class DotProductAttention(layers.Layer):
         return tf.matmul(attention_weights, values)
 
 class MMultiHeadAttention(layers.Layer):
-    def __init__(self, num_heads, key_dim, d_models, dropout=0.1, **kwargs):
+    def __init__(self, num_heads, key_dim, d_models, nt, nh_nw, dropout=0.1, **kwargs):
         super(MMultiHeadAttention, self).__init__(**kwargs)
         assert num_heads % 2 == 0, "num_heads must be even for division into two parts"
         self.num_heads = num_heads
@@ -74,13 +74,13 @@ class MMultiHeadAttention(layers.Layer):
         self.key_dim = key_dim
         self.d_model = d_models
         self.attention = DotProductAttention()
-        self.W_q = layers.Dense(d_models)  
-        self.W_k1 = layers.Dense(d_models//2)  
-        self.W_k2 = layers.Dense(d_models//2)  
-        self.W_v1 = layers.Dense(d_models//2)  
-        self.W_v2 = layers.Dense(d_models//2) 
+        self.W_q = layers.Dense(d_models)   
+        self.W_k = layers.Dense(d_models//2)
+        self.W_v = layers.Dense(d_models//2)
         self.W_o = layers.Dense(d_models)  
         self.dropout = layers.Dropout(dropout)
+        self.nt = nt
+        self.nh_nw = nh_nw
 
     def reshape_tensor(self, x, heads):
         batch_size = tf.shape(x)[0]
@@ -88,13 +88,20 @@ class MMultiHeadAttention(layers.Layer):
         x = tf.reshape(x, (batch_size, seq_len, heads, self.key_dim))
         return tf.transpose(x, perm=[0, 2, 1, 3])
 
-    def call(self, queries, keys1, keys2, values1, values2, mask=None, training=True):
-        batch_size = tf.shape(queries)[0]
-        q = self.W_q(queries)
-        k1 = self.W_k1(keys1)
-        k2 = self.W_k2(keys2)
-        v1 = self.W_v1(values1)
-        v2 = self.W_v2(values2)
+    def call(self, query, keys, values, mask=None, training=True):
+        batch_size = tf.shape(query)[0]
+        q = self.W_q(query)
+        
+        k = self.W_k(keys) 
+        k = tf.reshape(k, (batch_size, self.nt, self.nh_nw, self.d_model))
+        k1 = tf.reduce_mean(tensor_reshaped, axis=2)
+        k2 = tf.reduce_mean(tensor_reshaped, axis=1)
+
+        v = self.W_v(values) 
+        v = tf.reshape(v, (batch_size, self.nt, self.nh_nw, self.d_model))
+        v1 = tf.reduce_mean(tensor_reshaped, axis=2)
+        v2 = tf.reduce_mean(tensor_reshaped, axis=1)
+        
         q_heads = self.reshape_tensor(q, self.num_heads)  
         k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
         k_heads_2 = self.reshape_tensor(k2, self.half_heads)  
