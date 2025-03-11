@@ -11,6 +11,11 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers import TextVectorization
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
+try:
+    from VideoCaptioning.main import set_seed
+    set_seed()
+except:
+    pass
 cpu_count = multiprocessing.cpu_count()
 
 AUTOTUNE = tf.data.AUTOTUNE
