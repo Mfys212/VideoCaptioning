@@ -75,8 +75,8 @@ class MMultiHeadAttention(layers.Layer):
         self.d_model = d_models
         self.attention = DotProductAttention()
         self.W_q = layers.Dense(d_models)   
-        self.W_k = layers.Dense(d_models//2)
-        self.W_v = layers.Dense(d_models//2)
+        self.W_k = layers.Dense(d_models)
+        self.W_v = layers.Dense(d_models)
         self.W_o = layers.Dense(d_models)  
         self.dropout = layers.Dropout(dropout)
         self.nt = nt
@@ -91,16 +91,20 @@ class MMultiHeadAttention(layers.Layer):
     def call(self, query, keys, values, mask=None, training=True):
         batch_size = tf.shape(query)[0]
         q = self.W_q(query)
-        
         k = self.W_k(keys) 
-        k = tf.reshape(k, (batch_size, self.nt, self.nh_nw, self.d_model))
-        k1 = tf.reduce_mean(k, axis=2)
-        k2 = tf.reduce_mean(k, axis=1)
-
         v = self.W_v(values) 
-        v = tf.reshape(v, (batch_size, self.nt, self.nh_nw, self.d_model))
-        v1 = tf.reduce_mean(v, axis=2)
-        v2 = tf.reduce_mean(v, axis=1)
+        k1, k2 = tf.split(k, num_or_size_splits=2, axis=-1) 
+        v1, v2 = tf.split(v, num_or_size_splits=2, axis=-1)
+        
+        k1 = tf.reshape(k1, (batch_size, self.nt, self.nh_nw, self.d_model//2))
+        k1 = tf.reduce_mean(k1, axis=2)
+        k2 = tf.reshape(k2, (batch_size, self.nt, self.nh_nw, self.d_model//2))
+        k2 = tf.reduce_mean(k2, axis=1)
+
+        v1 = tf.reshape(v1, (batch_size, self.nt, self.nh_nw, self.d_model//2))
+        v1 = tf.reduce_mean(v1, axis=2)
+        v2 = tf.reshape(v2, (batch_size, self.nt, self.nh_nw, self.d_model//2))
+        v2 = tf.reduce_mean(v2, axis=1)
         
         q_heads = self.reshape_tensor(q, self.num_heads)  
         k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
