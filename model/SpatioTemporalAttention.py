@@ -20,7 +20,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         Z = self.layernorm[1](layers.Add()([Z, ffn]))
         return Z
 
-class Encoder(tf.keras.Model):
+class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 2, 16, 16)
