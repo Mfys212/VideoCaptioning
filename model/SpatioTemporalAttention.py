@@ -2,6 +2,11 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from .module import *
+try:
+    from VideoCaptioning import set_seed
+    set_seed()
+except:
+    pass
 
 class EncoderBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
