@@ -30,9 +30,9 @@ class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding2(d_models, 2, 16, 16)
-        num_patch = int((max_frames*spatial_size**2) / (1*16*16))
+        num_patch = int((max_frames*spatial_size**2) / (2*16*16))
         self.d_models = d_models
-        self.nt = max_frames
+        self.nt = max_frames//2
         self.nh_nw = int((spatial_size/16)**2)
         self.positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
