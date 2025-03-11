@@ -18,7 +18,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         attention = self.attention(query=Z, keys=Zs, keys2=Zt, values=Zs, values2=Zt, mask=mask, training=training)
         Z = self.layernorm[0](layers.Add()([Z, attention]))
         ffn = self.densel(self.dropout(self.dense(Z), training=training))
-        Z = self.layernorm[1](layers.Add()([inputsf, ffn]))
+        Z = self.layernorm[1](layers.Add()([Z, ffn]))
         return Z
 
 class Encoder(tf.keras.layers.Layer):
@@ -41,7 +41,7 @@ class Encoder(tf.keras.layers.Layer):
         batch_size = tf.shape(inputs)[0]
         Z, Zt, Zs = self.get_tem_spa(inputs, batch_size)
         for block in self.blocks:
-            Z = block([Z, Zt, Zs], mask=mask, training=training)
+            Z = block((Z, Zt, Zs), mask=mask, training=training)
             inputs = tf.reshape(Z, tf.shape(inputs))
             Z, Zt, Zs = self.get_tem_spa(inputs, batch_size)
         return Z
