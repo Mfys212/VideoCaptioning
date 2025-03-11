@@ -21,7 +21,7 @@ class EncoderBlock(tf.keras.layers.Layer):
             attention = self.attention1(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
             Z_new.append(layers.Add()([z, attention]))
         Z = tf.stack(Z_new, axis=1)
-        num_patch = int(tf.shape(Z)[2])
+        num_patch = tf.cast(tf.shape(Z)[2], tf.int32)
         Z_split = tf.split(Z, num_or_size_splits=num_patch, axis=2)
         Z_new = []
         for z in Z_split:
