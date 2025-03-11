@@ -47,8 +47,8 @@ class Encoder(tf.keras.models.Model):
         Z, Zt, Zs = self.get_tem_spa(inputs, batch_size)
         for block in self.blocks:
             Z = block((Z, Zt, Zs), mask=mask, training=training)
-            inputs = tf.reshape(Z, tf.shape(inputs))
-            Z, Zt, Zs = self.get_tem_spa(inputs, batch_size)
+            # inputs = tf.reshape(Z, tf.shape(inputs))
+            # Z, Zt, Zs = self.get_tem_spa(inputs, batch_size)
         return Z
 
     def get_tem_spa(self, inputs, batch_size):
