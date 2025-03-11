@@ -66,13 +66,13 @@ class DotProductAttention(layers.Layer):
         return tf.matmul(attention_weights, values)
 
 class MMultiHeadAttention(layers.Layer):
-    def __init__(self, num_heads, key_dim, d_model, dropout=0.1, **kwargs):
+    def __init__(self, num_heads, key_dim, d_models, dropout=0.1, **kwargs):
         super(MMultiHeadAttention, self).__init__(**kwargs)
         assert num_heads % 2 == 0, "num_heads must be even for division into two parts"
         self.num_heads = num_heads
         self.half_heads = num_heads // 2
         self.key_dim = key_dim
-        self.d_model = d_model
+        self.d_model = d_models
         self.attention = DotProductAttention()
         self.W_q = layers.Dense(d_model)  
         self.W_k1 = layers.Dense(d_model)  
