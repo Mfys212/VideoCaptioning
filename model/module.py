@@ -1,6 +1,11 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+try:
+    from VideoCaptioning import set_seed
+    set_seed()
+except:
+    pass
 
 class PatchEmbedding(layers.Layer):
     def __init__(self, embed_dim, patch_tem, patch_height, patch_width, **kwargs):
