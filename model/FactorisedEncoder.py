@@ -28,13 +28,13 @@ class EncoderBlock(tf.keras.layers.Layer):
 class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
-        self.patch_embedding = PatchEmbedding(d_models, 1, 16, 16)
+        self.patch_embedding = PatchEmbedding(d_models, 2, 16, 16)
         num_patch = int((spatial_size/16)**2)
         self.Spositional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
-        self.Tpositional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
+        self.Tpositional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
         self.blocks_spatial = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.blocks_temporal = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
-        self.max_frames = max_frames
+        self.max_frames = max_frames//2
 
     def call(self, inputs, training=True, mask=None):
         Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
