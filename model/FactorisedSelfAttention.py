@@ -4,7 +4,7 @@ from tensorflow.keras import layers
 from .module import *
 
 class EncoderBlock(tf.keras.layers.Layer):
-    def __init__(self, d_models, num_heads, **kwargs):
+    def __init__(self, d_models, num_heads, num_patch, **kwargs):
         super().__init__(**kwargs)
         d = d_models // num_heads
         self.attention1 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=d, dropout=0.1)
@@ -13,6 +13,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.dense = layers.Dense(d_models, activation="gelu")
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
+        self.num_patch = num_patch
 
     def call(self, Z, mask=None, training=True):
         Z_new = []
@@ -21,8 +22,7 @@ class EncoderBlock(tf.keras.layers.Layer):
             attention = self.attention1(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
             Z_new.append(layers.Add()([z, attention]))
         Z = tf.stack(Z_new, axis=1)
-        num_patch = tf.cast(tf.shape(Z)[2], tf.int32)
-        Z_split = tf.split(Z, num_or_size_splits=num_patch, axis=2)
+        Z_split = tf.split(Z, num_or_size_splits=self.num_patch, axis=2)
         Z_new = []
         for z in Z_split:
             z_norm = self.layernorm[1](z)
@@ -39,7 +39,7 @@ class Encoder(tf.keras.models.Model):
         self.patch_embedding = PatchEmbedding(d_models, 1, 16, 16)
         self.spa_num_patch = int((spatial_size / 16) ** 2)
         self.Spositional_encoding = PositionalEncoding(sequence_length=self.spa_num_patch, embed_dim=d_models)
-        self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
+        self.blocks = [EncoderBlock(d_models, num_heads, self.spa_num_patch) for _ in range(num_l)]
         self.max_frames = max_frames
         self.d_models = d_models
 
