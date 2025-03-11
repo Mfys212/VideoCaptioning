@@ -29,7 +29,7 @@ class EncoderBlock(tf.keras.layers.Layer):
 class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
-        self.patch_embedding = PatchEmbedding2(d_models, 1, 16, 16)
+        self.patch_embedding = PatchEmbedding2(d_models, 2, 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (1*16*16))
         self.d_models = d_models
         self.nt = max_frames
