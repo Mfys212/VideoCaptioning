@@ -104,10 +104,10 @@ class MMultiHeadAttention(layers.Layer):
         v = tf.concat([v1, v2], axis=1) 
         
         q_heads = self.reshape_tensor(q, self.num_heads)  
-        k_heads = self.reshape_tensor(k, self.half_heads)  
+        k_heads = self.reshape_tensor(k, self.num_heads)  
         # k_heads_1 = self.reshape_tensor(k1, self.half_heads)  
         # k_heads_2 = self.reshape_tensor(k2, self.half_heads)  
-        v_heads = self.reshape_tensor(v, self.half_heads)  
+        v_heads = self.reshape_tensor(v, self.num_heads)  
         # v_heads_1 = self.reshape_tensor(v1, self.half_heads)  
         # v_heads_2 = self.reshape_tensor(v2, self.half_heads) 
         # q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=1)
