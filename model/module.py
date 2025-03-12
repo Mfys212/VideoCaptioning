@@ -119,8 +119,6 @@ class MMultiHeadAttention(layers.Layer):
         attn_output = tf.reshape(attn_output, (batch_size, -1, self.d_model))
         return self.dropout(self.W_o(attn_output), training=training)
 
-ubah semuanya (yang bisa) menggunakan einsum 
-
 class TransformerBlock(tf.keras.layers.Layer):
     def __init__(self, d_models, num_heads, **kwargs):
         super().__init__(**kwargs)
