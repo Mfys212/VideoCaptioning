@@ -20,6 +20,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.dropout = layers.Dropout(0.1)
         self.nt = max_frames//2
         self.nh_nw = int((spatial_size/16)**2)
+        self.d_model = d_models
 
     def call(self, Z, mask=None, training=True):
         batch_size = tf.shape(Z)[0]
@@ -43,7 +44,7 @@ class Encoder(tf.keras.models.Model):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 2, 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (2*16*16))
-        self.Spositional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
+        self.positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks = [EncoderBlock(d_models, num_heads, max_frames, spatial_size) for _ in range(num_l)]
 
     def call(self, inputs, training=True, mask=None):
