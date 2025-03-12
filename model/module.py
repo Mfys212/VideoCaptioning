@@ -84,28 +84,31 @@ class MMultiHeadAttention(layers.Layer):
         self.nt = nt
         self.nh_nw = nh_nw
 
+    def reshape_tensor(self, x, heads):
+        return tf.einsum('bld->bhl', tf.reshape(x, (tf.shape(x)[0], tf.shape(x)[1], heads, self.key_dim)))
+
     def call(self, query, keys, values, mask=None, training=True):
         batch_size = tf.shape(query)[0]
         st = tf.reshape(query, (batch_size, self.nt, self.nh_nw, self.d_model))
-        t = tf.reduce_mean(st, axis=2)  
-        s = tf.reduce_mean(st, axis=1)
+        t = tf.reduce_mean(st, axis=2)  # Temporal summary
+        s = tf.reduce_mean(st, axis=1)  # Spatial summary
 
         q = self.W_q(query)
         k1, v1 = self.W_ks(s), self.W_vs(s)
         k2, v2 = self.W_kt(t), self.W_vt(t)
         
-        q_heads = tf.einsum('bld,hde->bhle', q, tf.eye(self.num_heads, self.key_dim))
-        k_heads_1 = tf.einsum('bld,hde->bhle', k1, tf.eye(self.half_heads, self.key_dim))
-        k_heads_2 = tf.einsum('bld,hde->bhle', k2, tf.eye(self.half_heads, self.key_dim))
-        v_heads_1 = tf.einsum('bld,hde->bhle', v1, tf.eye(self.half_heads, self.key_dim))
-        v_heads_2 = tf.einsum('bld,hde->bhle', v2, tf.eye(self.half_heads, self.key_dim))
+        q_heads = tf.reshape(q, (batch_size, -1, self.num_heads, self.key_dim))
+        k_heads_1 = tf.reshape(k1, (batch_size, -1, self.half_heads, self.key_dim))
+        k_heads_2 = tf.reshape(k2, (batch_size, -1, self.half_heads, self.key_dim))
+        v_heads_1 = tf.reshape(v1, (batch_size, -1, self.half_heads, self.key_dim))
+        v_heads_2 = tf.reshape(v2, (batch_size, -1, self.half_heads, self.key_dim))
         
-        q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=1)
+        q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=2)
         attn_out_1 = self.attention(q_heads_1, k_heads_1, v_heads_1, mask)
         attn_out_2 = self.attention(q_heads_2, k_heads_2, v_heads_2, mask)
         
-        attn_output = tf.concat([attn_out_1, attn_out_2], axis=1)
-        attn_output = tf.einsum('bhle->ble', attn_output)
+        attn_output = tf.concat([attn_out_1, attn_out_2], axis=2)
+        attn_output = tf.reshape(attn_output, (batch_size, -1, self.d_model))
         return self.dropout(self.W_o(attn_output), training=training)
 
 class TransformerBlock(tf.keras.layers.Layer):
