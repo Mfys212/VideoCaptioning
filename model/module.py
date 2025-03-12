@@ -121,6 +121,7 @@ class MMultiHeadAttention(layers.Layer):
     #     return self.dropout(self.W_o(attn_output), training=training)
 
     def call(self, query, keys, values, mask=None, training=True):
+        batch_size = tf.shape(query)[0]
         q = self.W_q(query)
         k = self.W_k(keys)
         v = self.W_v(values)
