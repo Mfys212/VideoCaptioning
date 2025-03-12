@@ -32,7 +32,7 @@ class CreateModel():
         self.vectorization = vectorization
         process_frames(FRAMES_STORAGE_PATH, captions_mapping, SPATIAL_SIZE, MAX_FRAMES)
         train_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
-                                         os.path.basename(video).split('.')[0]) for video in train_data.keys()]
+                                         os.path.basename(video).split('.')[0]) for video in captions_mapping.keys()]
         valid_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in valid_data.keys()]
         train_dataset = make_dataset_from_frames(train_frame_dirs, list(train_data.values()), 
@@ -174,10 +174,11 @@ class CreateModel():
         print(f"Num of trainable parameters: {total_params}")
         self.model = model
 
-    def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, train_size=0.8):
+    def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, test_size=0.2):
         if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
             self.NUM_CAPTIONS = NUM_CAPTIONS
             self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
+            train_size = 1 - test_size
             self.LoadData(CAPTIONS_PATH, self.FRAMES_STORAGE_PATH, train_size, self.SEQ_LENGTH, 
                          self.VOCAB_SIZE, self.SPATIAL_SIZE, self.MAX_FRAMES, self.NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH)
         if self.multigpu == True:
