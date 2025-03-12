@@ -9,7 +9,7 @@ except:
     pass
 
 class EncoderBlock(tf.keras.layers.Layer):
-    def __init__(self, d_models, num_heads, num_patch, **kwargs):
+    def __init__(self, d_models, num_heads, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         d = d_models // num_heads
         self.attention1 = layers.MultiHeadAttention(num_heads=num_heads, key_dim=d, dropout=0.1)
@@ -18,42 +18,37 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.dense = layers.Dense(d_models, activation="gelu")
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
-        self.num_patch = num_patch
+        self.nt = max_frames//2
+        self.nh_nw = int((spatial_size/16)**2)
 
     def call(self, Z, mask=None, training=True):
-        Z_new = []
-        for z in Z:
-            z_norm = self.layernorm[0](z)
-            attention = self.attention1(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
-            Z_new.append(layers.Add()([z, attention]))
-        Z = tf.stack(Z_new, axis=1)
-        Z_split = tf.split(Z, num_or_size_splits=self.num_patch, axis=2)
-        Z_new = []
-        for z in Z_split:
-            z_norm = self.layernorm[1](z)
-            attention = self.attention2(query=z_norm, value=z_norm, key=z_norm, attention_mask=mask, training=training)
-            z = layers.Add()([z, attention])
-            ffn = self.densel(self.dropout(self.dense(self.layernorm[2](z)), training=training))
-            Z_new.append(layers.Add()([z, ffn]))
-        Z = tf.concat(Z_new, axis=1)
-        return Z
+        batch_size = tf.shape(Z)[0]
+        Z = tf.reshape(Z, (batch_size, self.nt, self.nh_nw, self.d_model))
+        Zs = tf.reshape(Z, (batch_size*self.nt, self.nh_nw, self.d_model))
+        Znorm = self.layernorm[0](Zs)
+        attention = self.attention1(query=Znorm, value=Znorm, key=Znorm, attention_mask=mask, training=training)
+        Zs = layers.Add()([Zs, attention])
+        Z = tf.reshape(Zs, (batch_size, self.nt, self.nh_nw, self.d_model))
+        Z = tf.transpose(Z, perm=[0, 2, 1, 3])
+        Zt = tf.reshape(Z, (batch_size*self.nh_nw, self.nt, self.d_model))
+        Znorm = self.layernorm[1](Zt)
+        attention = self.attention2(query=Znorm, value=Znorm, key=Znorm, attention_mask=mask, training=training)
+        Zt = layers.Add()([Zt, attention])
+        ffn = self.densel(self.dropout(self.dense(self.layernorm[2](Zt)), training=training))
+        Z = layers.Add()([Zt, ffn])
+        return tf.reshape(Z, (batch_size, self.nt * self.nh_nw, self.d_model))
 
 class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 2, 16, 16)
-        self.spa_num_patch = int((spatial_size / 16) ** 2)
-        self.Spositional_encoding = PositionalEncoding(sequence_length=self.spa_num_patch, embed_dim=d_models)
-        self.blocks = [EncoderBlock(d_models, num_heads, self.spa_num_patch) for _ in range(num_l)]
-        self.max_frames = max_frames//2
-        self.d_models = d_models
+        num_patch = int((max_frames*spatial_size**2) / (2*16*16))
+        self.Spositional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
+        self.blocks = [EncoderBlock(d_models, num_heads, max_frames, spatial_size) for _ in range(num_l)]
 
     def call(self, inputs, training=True, mask=None):
-        Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
-        Z = [self.patch_embedding(z) for z in Z]
-        Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
+        Z = self.patch_embedding(inputs)
+        Z = layers.Add()([Z, self.positional_encoding(Z)])
         for block in self.blocks:
             Z = block(Z, mask=mask, training=training)
-            Z = tf.split(Z, num_or_size_splits=self.max_frames, axis=1)
-        Z = tf.reshape(tf.concat(Z, axis=2), (tf.shape(inputs)[0], self.max_frames * self.spa_num_patch, self.d_models))
         return Z
