@@ -58,12 +58,12 @@ class DotProductAttention(layers.Layer):
         super(DotProductAttention, self).__init__(**kwargs)
 
     def call(self, queries, keys, values, mask=None):
-        d_k = tf.sqrt(tf.cast(tf.shape(keys)[-1], keys.dtype)) 
-        scores = tf.einsum('...qd,...kd->...qk', queries, keys) / d_k 
+        d_k = tf.cast(tf.shape(keys)[-1], keys.dtype) ** 0.5
+        scores = tf.einsum('bhqd,bhkd->bhqk', queries, keys) / d_k
         if mask is not None:
             scores += -1e9 * mask
         attention_weights = tf.nn.softmax(scores, axis=-1)
-        return tf.einsum('...qk,...kv->...qv', attention_weights, values) 
+        return tf.einsum('bhqk,bhkv->bhqv', attention_weights, values)
 
 class MMultiHeadAttention(layers.Layer):
     def __init__(self, num_heads, key_dim, d_models, nt, nh_nw, dropout=0.1, **kwargs):
@@ -108,16 +108,12 @@ class MMultiHeadAttention(layers.Layer):
         # v_heads = self.reshape_tensor(v, self.num_heads)  
         v_heads_1 = self.reshape_tensor(v1, self.half_heads)  
         v_heads_2 = self.reshape_tensor(v2, self.half_heads) 
-        q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=1)
+        # q_heads_1, q_heads_2 = tf.split(q_heads, num_or_size_splits=2, axis=1)
         # attn_out_1 = self.attention(q_heads_1, k_heads_1, v_heads_1, mask)
         # attn_out_2 = self.attention(q_heads_2, k_heads_2, v_heads_2, mask)
-        # attn_out_1 = self.attention(q_heads[:, :self.half_heads], k_heads_1, v_heads_1, mask)
-        # attn_out_2 = self.attention(q_heads[:, self.half_heads:], k_heads_2, v_heads_2, mask)
-        # attn_output = tf.concat([attn_out_1, attn_out_2], axis=1)
-        q_heads = tf.concat([q_heads_1, q_heads_2], axis=2)
-        k_heads = tf.concat([k_heads_1, k_heads_2], axis=2) 
-        v_heads = tf.concat([v_heads_1, v_heads_2], axis=2)  
-        attn_output = self.attention(q_heads, k_heads, v_heads, mask)
+        attn_out_1 = self.attention(q_heads[:, :self.half_heads], k_heads_1, v_heads_1, mask)
+        attn_out_2 = self.attention(q_heads[:, self.half_heads:], k_heads_2, v_heads_2, mask)
+        attn_output = tf.concat([attn_out_1, attn_out_2], axis=1)
         attn_output = tf.transpose(attn_output, perm=[0, 2, 1, 3]) 
         attn_output = tf.reshape(attn_output, (batch_size, -1, self.d_model))
         return self.dropout(self.W_o(attn_output), training=training)
