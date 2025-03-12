@@ -29,25 +29,24 @@ class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
         self.patch_embedding = PatchEmbedding(d_models, 2, 16, 16)
-        num_patch = int((spatial_size/16)**2)
-        self.Spositional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
-        self.Tpositional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
+        num_patch = int((max_frames*spatial_size**2) / (2*16*16))
+        self.nt = max_frames//2
+        self.nh_nw = int((spatial_size/16)**2)
+        self.positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks_spatial = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.blocks_temporal = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
-        self.max_frames = max_frames//2
+        self.d_model = d_models
 
     def call(self, inputs, training=True, mask=None):
-        Z = tf.split(inputs, num_or_size_splits=self.max_frames, axis=1)
-        Z = [self.patch_embedding(z) for z in Z]
-        Z = [layers.Add()([z, self.Spositional_encoding(z)]) for z in Z]
-        Z_new = []
-        for z in Z:
-            for block in self.blocks_spatial:
-                z = block(z, mask=mask, training=training)
-            z = tf.reduce_mean(z, axis=1)
-            Z_new.append(z)
-        Z = tf.stack(Z_new, axis=1)
-        Z = layers.Add()([Z, self.Tpositional_encoding(Z)])
+        Z = self.patch_embedding(inputs)
+        Z = layers.Add()([Z, self.positional_encoding(Z)])
+        batch_size = tf.shape(Z)[0]
+        Z = tf.reshape(Z, (batch_size, self.nt, self.nh_nw, self.d_model))
+        Zs = tf.reshape(Z, (batch_size*self.nt, self.nh_nw, self.d_model))
+        for block in self.blocks_spatial:
+            Zs = block(Zs, mask=mask, training=training)
+        Z = tf.reduce_mean(Zs, axis=1)
+        Zt = tf.reshape(Z, (batch_size, self.nt, self.d_model))
         for block in self.blocks_temporal:
-            Z = block(Z, mask=mask, training=training)
-        return Z
+            Zt = block(Zt, mask=mask, training=training)
+        return Zt
