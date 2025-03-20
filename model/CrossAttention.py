@@ -37,7 +37,8 @@ class EncoderBlock(tf.keras.layers.Layer):
 class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
-        self.conv = layers.Conv3D(3, (2, 5, 5), strides=(2, 4, 4), padding='same')
+        self.conv1 = layers.Conv3D(3, (1, 3, 3), strides=(1, 2, 2), padding='same')
+        self.conv2 = layers.Conv3D(3, (2, 3, 3), strides=(2, 2, 2), padding='same')
         self.flatten = layers.TimeDistributed(layers.Flatten())
         self.linear = layers.Dense(d_models)
         self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
