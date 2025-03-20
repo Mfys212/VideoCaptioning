@@ -49,7 +49,7 @@ class Encoder(tf.keras.models.Model):
         self.out = layers.Dense(d_models, activation="gelu")
 
     def call(self, inputs, training=True, mask=None):
-        tem = self.linear(self.flatten(self.conv(inputs)))
+        tem = self.linear(self.flatten(self.conv2(self.conv1(inputs))))
         Zt = layers.Add()([tem, self.t_positional_encoding(tem)])
         spa = self.patch_embedding(inputs)
         Zs = layers.Add()([spa, self.s_positional_encoding(spa)])
