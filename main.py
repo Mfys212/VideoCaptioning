@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import numpy as np
+import gc
 from VideoCaptioning.data import *
 from VideoCaptioning.evaluation import *
 from VideoCaptioning.model import *
@@ -189,6 +190,8 @@ class CreateModel():
             cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
             self.model.compile(optimizer=optimizer, loss=cross_entropy)
             
+        tf.keras.backend.clear_session()
+        gc.collect()    
         history = self.model.fit(self.train_data, 
                                  epochs=EPOCHS, 
                                  validation_data=self.test_data, 
