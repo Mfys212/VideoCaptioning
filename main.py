@@ -59,10 +59,10 @@ class CreateModel():
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (2*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, model = self.DefineModel(SpatioTemporalAttention.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, self.model = self.DefineModel(SpatioTemporalAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(SpatioTemporalAttention.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, self.model = self.DefineModel(SpatioTemporalAttention.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -76,17 +76,17 @@ class CreateModel():
             var_params = tf.size(var).numpy()
             total_params += var_params
         print(f"Num of trainable parameters: {total_params}")
-        self.model = model
+        # self.model = model
 
     def FactorisedEncoder(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                         VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = MAX_FRAMES
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, self.model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, self.model = self.DefineModel(FactorisedEncoder.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -100,17 +100,17 @@ class CreateModel():
             var_params = tf.size(var).numpy()
             total_params += var_params
         print(f"Num of trainable parameters: {total_params}")
-        self.model = model
+        # self.model = model
 
     def FactorisedSelfAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                                VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, model = self.DefineModel(FactorisedSelfAttention.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, self.model = self.DefineModel(FactorisedSelfAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(FactorisedSelfAttention.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, self.model = self.DefineModel(FactorisedSelfAttention.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -124,17 +124,17 @@ class CreateModel():
             var_params = tf.size(var).numpy()
             total_params += var_params
         print(f"Num of trainable parameters: {total_params}")
-        self.model = model
+        # self.model = model
 
     def FactorisedDotProductAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                                     VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, model = self.DefineModel(FactorisedDotProductAttention.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, self.model = self.DefineModel(FactorisedDotProductAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(FactorisedDotProductAttention.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, self.model = self.DefineModel(FactorisedDotProductAttention.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -148,17 +148,17 @@ class CreateModel():
             var_params = tf.size(var).numpy()
             total_params += var_params
         print(f"Num of trainable parameters: {total_params}")
-        self.model = model
+        # self.model = model
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                        VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
         NUM_PATCH = int((SPATIAL_SIZE/16)**2) + MAX_FRAMES
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
+                encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
                                                            NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
         else:
-            encoder, decoder, model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
+            encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
                                                        NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
@@ -172,7 +172,7 @@ class CreateModel():
             var_params = tf.size(var).numpy()
             total_params += var_params
         print(f"Num of trainable parameters: {total_params}")
-        self.model = model
+        # self.model = model
 
     def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, test_size=0.2):
         if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
