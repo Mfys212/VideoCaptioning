@@ -70,7 +70,7 @@ class CreateModel():
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
         self.NUM_CAPTIONS = NUM_CAPTIONS                           
-        trainable_vars = model.trainable_variables
+        trainable_vars = self.model.trainable_variables
         total_params = 0
         for var in trainable_vars:
             var_params = tf.size(var).numpy()
@@ -94,7 +94,7 @@ class CreateModel():
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
         self.NUM_CAPTIONS = NUM_CAPTIONS                    
-        trainable_vars = model.trainable_variables
+        trainable_vars = self.model.trainable_variables
         total_params = 0
         for var in trainable_vars:
             var_params = tf.size(var).numpy()
@@ -118,7 +118,7 @@ class CreateModel():
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
         self.NUM_CAPTIONS = NUM_CAPTIONS                           
-        trainable_vars = model.trainable_variables
+        trainable_vars = self.model.trainable_variables
         total_params = 0
         for var in trainable_vars:
             var_params = tf.size(var).numpy()
@@ -142,7 +142,7 @@ class CreateModel():
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
         self.NUM_CAPTIONS = NUM_CAPTIONS
-        trainable_vars = model.trainable_variables
+        trainable_vars = self.model.trainable_variables
         total_params = 0
         for var in trainable_vars:
             var_params = tf.size(var).numpy()
@@ -166,7 +166,7 @@ class CreateModel():
         self.SPATIAL_SIZE = SPATIAL_SIZE
         self.MAX_FRAMES = MAX_FRAMES
         self.NUM_CAPTIONS = NUM_CAPTIONS
-        trainable_vars = model.trainable_variables
+        trainable_vars = self.model.trainable_variables
         total_params = 0
         for var in trainable_vars:
             var_params = tf.size(var).numpy()
