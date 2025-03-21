@@ -176,6 +176,8 @@ class CreateModel():
         # self.model = model
 
     def fit(self, CAPTIONS_PATH, VIDEOS_PATH, FRAMES_STORAGE_PATH, EPOCHS, BATCH_SIZE, NUM_CAPTIONS=40, test_size=0.2):
+        tf.keras.backend.clear_session()
+        gc.collect()
         if self.train_data is None or NUM_CAPTIONS != self.NUM_CAPTIONS or FRAMES_STORAGE_PATH != self.FRAMES_STORAGE_PATH:
             self.NUM_CAPTIONS = NUM_CAPTIONS
             self.FRAMES_STORAGE_PATH = FRAMES_STORAGE_PATH
@@ -189,9 +191,7 @@ class CreateModel():
         else:
             cross_entropy, early_stopping, optimizer = DefineCompile(self.D_MODELS)
             self.model.compile(optimizer=optimizer, loss=cross_entropy)
-            
-        tf.keras.backend.clear_session()
-        gc.collect()    
+                
         history = self.model.fit(self.train_data, 
                                  epochs=EPOCHS, 
                                  validation_data=self.test_data, 
