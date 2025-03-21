@@ -57,6 +57,7 @@ class CreateModel():
 
     def SpatioTemporalAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                                VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+        del self.model
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (2*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -81,6 +82,7 @@ class CreateModel():
 
     def FactorisedEncoder(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                         VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+        del self.model
         NUM_PATCH = MAX_FRAMES
         if self.multigpu == True:
             with self.strategy.scope():
@@ -105,6 +107,7 @@ class CreateModel():
 
     def FactorisedSelfAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                                VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+        del self.model
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -129,6 +132,7 @@ class CreateModel():
 
     def FactorisedDotProductAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                                     VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+        del self.model
         NUM_PATCH = int((MAX_FRAMES*(SPATIAL_SIZE)**2) / (1*16**2))
         if self.multigpu == True:
             with self.strategy.scope():
@@ -153,6 +157,7 @@ class CreateModel():
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                        VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+        del self.model
         NUM_PATCH = int((SPATIAL_SIZE/16)**2 + (MAX_FRAMES//2))
         if self.multigpu == True:
             with self.strategy.scope():
