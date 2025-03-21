@@ -153,7 +153,7 @@ class CreateModel():
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
                        VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
-        NUM_PATCH = int((SPATIAL_SIZE/16)**2 + MAX_FRAMES)
+        NUM_PATCH = int((SPATIAL_SIZE/16)**2 + (MAX_FRAMES//2))
         if self.multigpu == True:
             with self.strategy.scope():
                 encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
