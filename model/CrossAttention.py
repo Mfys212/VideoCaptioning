@@ -43,7 +43,7 @@ class Encoder(tf.keras.models.Model):
         self.linear = layers.Dense(d_models)
         self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (max_frames*16*16))
-        self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames, embed_dim=d_models)
+        self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
         self.s_positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
         self.blocks = [EncoderBlock(d_models, num_heads) for _ in range(num_l)]
         self.out = layers.Dense(d_models, activation="gelu")
