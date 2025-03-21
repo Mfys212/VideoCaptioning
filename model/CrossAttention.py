@@ -55,6 +55,6 @@ class Encoder(tf.keras.models.Model):
         Zs = layers.Add()([spa, self.s_positional_encoding(spa)])
         for block in self.blocks:
             Zt, Zs = block([Zt, Zs], mask=mask, training=training)
-        out = tf.concat([Zs, Zt], axis=-1)
+        out = tf.concat([Zs, Zt], axis=1)
         out = self.out(out)
         return out
