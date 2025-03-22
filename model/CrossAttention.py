@@ -37,10 +37,12 @@ class EncoderBlock(tf.keras.layers.Layer):
 class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, **kwargs):
         super().__init__(**kwargs)
-        self.conv1 = layers.Conv3D(4, (1, 3, 3), strides=(1, 2, 2), padding='same')
-        self.conv2 = layers.Conv3D(2, (2, 3, 3), strides=(2, 2, 2), padding='same')
+        self.tconv1 = layers.Conv3D(4, (1, 3, 3), strides=(1, 2, 2), padding='same')
+        self.tconv2 = layers.Conv3D(3, (2, 3, 3), strides=(2, 2, 2), padding='same')
         self.flatten = layers.TimeDistributed(layers.Flatten())
         self.linear = layers.Dense(d_models)
+        self.sconv1 = layers.Conv3D(4, (3, 1, 1), strides=(2, 1, 1), padding='same')
+        self.sconv2 = layers.Conv3D(3, (3, 1, 1), strides=(2, 1, 1), padding='same')
         self.patch_embedding = PatchEmbedding(d_models, max_frames, 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (max_frames*16*16))
         self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
@@ -49,9 +51,9 @@ class Encoder(tf.keras.models.Model):
         self.out = layers.Dense(d_models, activation="gelu")
 
     def call(self, inputs, training=True, mask=None):
-        tem = self.linear(self.flatten(self.conv2(self.conv1(inputs))))
+        tem = self.linear(self.flatten(self.tconv2(self.tconv1(inputs))))
         Zt = layers.Add()([tem, self.t_positional_encoding(tem)])
-        spa = self.patch_embedding(inputs)
+        spa = self.patch_embedding(self.sconv2(self.sconv1(inputs)))
         Zs = layers.Add()([spa, self.s_positional_encoding(spa)])
         for block in self.blocks:
             Zt, Zs = block([Zt, Zs], mask=mask, training=training)
