@@ -29,19 +29,16 @@ class CreateModel():
                  VOCAB_SIZE, SPATIAL_SIZE, MAX_FRAMES, NUM_CAPTIONS, BATCH_SIZE, VIDEOS_PATH):
         captions_mapping, text_data = load_captions_data(CAPTIONS_PATH, SEQ_LENGTH, VIDEOS_PATH)
         train_data, valid_data = train_val_split(captions_mapping, train_size)
-        vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
-        self.vectorization = vectorization
+        self.vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
         process_frames(FRAMES_STORAGE_PATH, captions_mapping, SPATIAL_SIZE, MAX_FRAMES)
         train_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in captions_mapping.keys()]
         valid_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in valid_data.keys()]
-        train_dataset = make_dataset_from_frames(train_frame_dirs, list(captions_mapping.values()), 
-                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
-        valid_dataset = make_dataset_from_frames(valid_frame_dirs, list(valid_data.values()), 
-                                                 vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
-        self.train_data = train_dataset
-        self.test_data = valid_dataset
+        self.train_data = make_dataset_from_frames(train_frame_dirs, list(captions_mapping.values()), 
+                                                 self.vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
+        self.test_data = make_dataset_from_frames(valid_frame_dirs, list(valid_data.values()), 
+                                                 self.vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
         self.test = valid_data
 
     def DefineModel(self, ENCODER, DECODER, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
