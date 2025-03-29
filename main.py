@@ -42,10 +42,15 @@ class CreateModel():
         self.test = valid_data
 
     def DefineModel(self, ENCODER, DECODER, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                    NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L):
-        encoder = ENCODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
-                                          num_l=NUM_L, max_frames=MAX_FRAMES, spatial_size=SPATIAL_SIZE)
-        encoder.build(input_shape=(None, MAX_FRAMES, SPATIAL_SIZE, SPATIAL_SIZE, 3))  
+                    NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4, ca=False):
+        if ca:
+            encoder = ENCODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
+                                          num_l=NUM_L, max_frames=MAX_FRAMES, spatial_size=SPATIAL_SIZE, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4)
+        else:
+            encoder = ENCODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
+                                              num_l=NUM_L, max_frames=MAX_FRAMES, spatial_size=SPATIAL_SIZE)
+        encoder.build(input_shape=(None, MAX_FRAMES, SPATIAL_SIZE, SPATIAL_SIZE, 3))
+                
         decoder = DECODER(d_models=D_MODELS, num_heads=NUM_HEADS, 
                                 vocab_size=VOCAB_SIZE, seq_length=SEQ_LENGTH, num_l=NUM_L)
         decoder.build([(None, None), (None, NUM_PATCH, D_MODELS), (None, None)])
@@ -153,16 +158,16 @@ class CreateModel():
         # self.model = model
 
     def CrossAttention(self, D_MODELS, NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, 
-                       VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40):
+                       VOCAB_SIZE, SEQ_LENGTH, NUM_L, NUM_CAPTIONS=40, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4):
         del self.model
         NUM_PATCH = int((SPATIAL_SIZE/16)**2 + (MAX_FRAMES//2))
         if self.multigpu == True:
             with self.strategy.scope():
-                encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
-                                                           NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)
+                encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, NUM_HEADS, MAX_FRAMES, 
+                                                                SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4, ca=True)
         else:
-            encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, 
-                                                       NUM_HEADS, MAX_FRAMES, SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L)  
+            encoder, decoder, self.model = self.DefineModel(CrossAttention.Encoder, module.Decoder, D_MODELS, NUM_HEADS, MAX_FRAMES, 
+                                                            SPATIAL_SIZE, NUM_PATCH, VOCAB_SIZE, SEQ_LENGTH, NUM_L, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4, ca=True)  
         self.D_MODELS = D_MODELS
         self.SEQ_LENGTH = SEQ_LENGTH
         self.VOCAB_SIZE = VOCAB_SIZE
