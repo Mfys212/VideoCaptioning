@@ -47,11 +47,11 @@ class Encoder(tf.keras.models.Model):
     def __init__(self, d_models, num_heads, num_l, max_frames, spatial_size, R_SPATIAL=4, R_TEMPORAL=4, F_SPATIAL=4, F_TEMPORAL=4, TEMPORAL_FIRST=True, **kwargs):
         super().__init__(**kwargs)
         self.tconv1 = layers.Conv3D(F_SPATIAL, (1, int(R_SPATIAL//2)+1, int(R_SPATIAL//2)+1), strides=(1, int(R_SPATIAL//2), int(R_SPATIAL//2)), padding='same')
-        self.tconv2 = layers.Conv3D(3, (2, int(R_SPATIAL//2)+1, int(R_SPATIAL//2)+1), strides=(2, int(R_SPATIAL//2), int(R_SPATIAL//2)), padding='same')
+        self.tconv2 = layers.Conv3D(3, (2, int(R_SPATIAL//2)+1, int(R_SPATIAL//2)+1), strides=(2, 2, 2), padding='same')
         self.flatten = layers.TimeDistributed(layers.Flatten())
         self.linear = layers.Dense(d_models)
         self.sconv1 = layers.Conv3D(F_TEMPORAL, (int(R_TEMPORAL//2)+1, 1, 1), strides=(int(R_TEMPORAL//2), 1, 1), padding='same')
-        self.sconv2 = layers.Conv3D(3, (int(R_TEMPORAL//2)+1, 1, 1), strides=(int(R_TEMPORAL//2), 1, 1), padding='same')
+        self.sconv2 = layers.Conv3D(3, (int(R_TEMPORAL//2)+1, 1, 1), strides=(2, 1, 1), padding='same')
         self.patch_embedding = PatchEmbedding(d_models, int(max_frames//R_TEMPORAL), 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (max_frames*16*16))
         self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
