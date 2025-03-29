@@ -52,7 +52,7 @@ class Encoder(tf.keras.models.Model):
         self.linear = layers.Dense(d_models)
         self.sconv1 = layers.Conv3D(F_TEMPORAL, (int(R_TEMPORAL//2)+1, 1, 1), strides=(int(R_TEMPORAL//2), 1, 1), padding='same')
         self.sconv2 = layers.Conv3D(3, (int(R_TEMPORAL//2)+1, 1, 1), strides=(int(R_TEMPORAL//2), 1, 1), padding='same')
-        self.patch_embedding = PatchEmbedding(d_models, max_frames//4, 16, 16)
+        self.patch_embedding = PatchEmbedding(d_models, max_frames//R_TEMPORAL, 16, 16)
         num_patch = int((max_frames*spatial_size**2) / (max_frames*16*16))
         self.t_positional_encoding = PositionalEncoding(sequence_length=max_frames//2, embed_dim=d_models)
         self.s_positional_encoding = PositionalEncoding(sequence_length=num_patch, embed_dim=d_models)
