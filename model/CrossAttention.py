@@ -35,7 +35,7 @@ class EncoderBlock(tf.keras.layers.Layer):
             Zs = self.layernorm[0](layers.Add()([Zs, attention1]))
             Zst = tf.concat([Zs, Zt], axis=1)
             attention2 = self.attention2(query=Zt, value=Zst, key=Zst, attention_mask=mask, training=training)
-            Zt = self.layernorm[1](layers.Add()([Zs, attention2]))
+            Zt = self.layernorm[1](layers.Add()([Zt, attention2]))
 
         ffn1 = self.densel(self.dropout(self.dense(Zt), training=training))
         Zt = self.layernorm[2](layers.Add()([ffn1, Zt]))
