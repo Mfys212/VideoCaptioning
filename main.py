@@ -35,7 +35,7 @@ class CreateModel():
                                          os.path.basename(video).split('.')[0]) for video in captions_mapping.keys()]
         valid_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in valid_data.keys()]
-        self.train_data = make_dataset_from_frames(train_frame_dirs, list(captions_mapping.values()), 
+        self.train_data = make_dataset_from_frames(train_frame_dirs, list(train_data.values()), 
                                                  self.vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
         self.test_data = make_dataset_from_frames(valid_frame_dirs, list(valid_data.values()), 
                                                  self.vectorization, NUM_CAPTIONS, SPATIAL_SIZE, MAX_FRAMES, BATCH_SIZE)
