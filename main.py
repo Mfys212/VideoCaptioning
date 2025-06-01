@@ -32,7 +32,7 @@ class CreateModel():
         self.vectorization = vectoriz_text(text_data, VOCAB_SIZE, SEQ_LENGTH)
         process_frames(FRAMES_STORAGE_PATH, captions_mapping, SPATIAL_SIZE, MAX_FRAMES)
         train_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
-                                         os.path.basename(video).split('.')[0]) for video in captions_mapping.keys()]
+                                         os.path.basename(video).split('.')[0]) for video in train_data.keys()]
         valid_frame_dirs = [os.path.join(FRAMES_STORAGE_PATH, 
                                          os.path.basename(video).split('.')[0]) for video in valid_data.keys()]
         self.train_data = make_dataset_from_frames(train_frame_dirs, list(train_data.values()), 
