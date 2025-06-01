@@ -141,7 +141,7 @@ def DefineCompile(D_MODELS):
     cross_entropy = keras.losses.SparseCategoricalCrossentropy(
         from_logits=True, reduction="none"
     )
-    early_stopping = keras.callbacks.EarlyStopping(monitor="seq_loss", patience=5, restore_best_weights=True)
+    early_stopping = keras.callbacks.EarlyStopping(monitor="val_seq_loss", patience=5, restore_best_weights=True)
     class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         def __init__(self, d_model, warmup_steps=4000):
             super(CustomSchedule, self).__init__()
