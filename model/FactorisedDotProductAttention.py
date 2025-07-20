@@ -18,7 +18,7 @@ class EncoderBlock(tf.keras.layers.Layer):
         else:
             self.attention1 = layers.MultiHeadAttention(num_heads=num_heads//2, key_dim=d, dropout=0.1, output_shape=d_models//2)
             self.attention2 = layers.MultiHeadAttention(num_heads=num_heads//2, key_dim=d, dropout=0.1, output_shape=d_models//2)
-        self.layernorm = [layers.LayerNormalization() for _ in range(2)]
+        self.layernorm = [layers.LayerNormalization() for _ in range(3)]
         self.dense = layers.Dense(d_models, activation="gelu")
         self.densel = layers.Dense(d_models)
         self.dropout = layers.Dropout(0.1)
@@ -27,19 +27,20 @@ class EncoderBlock(tf.keras.layers.Layer):
         self.d_model = d_models
 
     def call(self, Z, mask=None, training=True):
-        batch_size = tf.shape(Z)[0]
-        st = tf.reshape(Z, (batch_size, self.nt, self.nh_nw, self.d_model))
+        Z_norm = self.layernorm[0](Z)
+        batch_size = tf.shape(Z_norm)[0]
+        st = tf.reshape(Z_norm, (batch_size, self.nt, self.nh_nw, self.d_model))
         t = tf.reduce_mean(st, axis=2)
         s = tf.reduce_mean(st, axis=1)
         if self.dot_1:
-            attention = self.attention1(query=Z, keys=Z, values=Z, mask=mask, training=training)
+            attention = self.attention1(query=Z_norm, keys=Z_norm, values=Z_norm, mask=mask, training=training)
         else:
-            attention1 = self.attention1(query=Z, value=s, key=s, attention_mask=mask, training=training)
-            attention2 = self.attention2(query=Z, value=t, key=t, attention_mask=mask, training=training)
+            attention1 = self.attention1(query=Z_norm, value=s, key=s, attention_mask=mask, training=training)
+            attention2 = self.attention2(query=Z_norm, value=t, key=t, attention_mask=mask, training=training)
             attention = tf.concat([attention1, attention2], axis=-1)
-        Z = self.layernorm[0](layers.Add()([Z, attention]))
+        Z = self.layernorm[1](layers.Add()([Z, attention]))
         ffn = self.densel(self.dropout(self.dense(Z), training=training))
-        Z = self.layernorm[1](layers.Add()([Z, ffn]))
+        Z = self.layernorm[2](layers.Add()([Z, ffn]))
         return Z
 
 class Encoder(tf.keras.models.Model):
